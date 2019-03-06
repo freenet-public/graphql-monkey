@@ -1,0 +1,24 @@
+{
+  "include": ["src"],
+  "exclude": ["dist", "node_modules"],
+  "compilerOptions": {
+    "outDir": "dist",
+    "target": "es2017",
+    "module": "commonjs",
+    "declaration": true,
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "allowJs": false,
+    "lib": ["dom", "es2017", "esnext"],
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "removeComments": true,
+    "resolveJsonModule": true,
+    "pretty": true,
+    "esModuleInterop": true,
+    "strict": true
+  },
+  "typeAcquisition": {
+    "enable": true
+  }
+}

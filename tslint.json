@@ -1,0 +1,21 @@
+{
+  "extends": ["tslint:recommended"],
+  "linterOptions": {
+    "exclude": ["**/*.json"]
+  },
+  "rules": {
+    "quotemark": [true, "single", "avoid-escape"],
+    "trailing-comma": [true, "never"],
+    "object-literal-sort-keys": false,
+    "object-literal-key-quotes": [true, "as-needed"],
+    "max-line-length": [true, 150],
+    "arrow-parens": false,
+    "interface-name": false,
+    "variable-name": false,
+    "ordered-imports": false,
+    "no-var-requires": false,
+    "max-classes-per-file": [true, 5],
+    "object-literal-shorthand": true,
+    "no-non-null-assertion": true
+  }
+}
