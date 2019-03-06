@@ -1,9 +1,4 @@
-/node_modules
-/coverage
 /.nyc_output
-mocha*.json
-.sonarlint
-.vscode
-/tmp
-.idea
+/coverage
 /dist
+/node_modules

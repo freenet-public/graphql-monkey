@@ -17,7 +17,7 @@ Try `gqlm --url https://countries.trevorblades.com --verbose`.
 See `gqlm --help` for more options.
 
 See `examples` for advanced testing using files to define options.
-Run with `gqlm examples/countries.ts --verbose`, for example.
+Run with `gqlm examples/countries.ts --require ts-node/register`, for example.
 
 
 ## Options
@@ -95,20 +95,26 @@ GQLM will use aliases to match field names and known data more effectively.
 
 Options for HTTP requests. See https://www.npmjs.com/package/request-promise
 
-### Endpoint Callback (options.endpointCallback: (result: TestEndpoint) => TestEndpoint | null))
+### Endpoint Callback (options.endpointCallback: (endpoint: TestEndpoint) => TestEndpoint | null))
 
-An optional callback that allows transforming (return endpoint)
-or omitting test endpoints (return null).
+An optional callback that allows transforming (return *endpoint*)
+or omitting test endpoints (return *null*).
 
 ### Error Callback (options.errorCallback: (error: GraphQLError) => boolean))
 
 An optional callback that determines whether an error is
-an unexpected error (return true)
-or not (return false).
+an unexpected error (return *true*)
+or not (return *false*).
 
 Only unexpected errors will mark a test result as failed.
 
 ### Result Callback (options.resultCallback: (result: TestResult) => TestResult | null))
 
-An optional callback that allows transforming (return result)
-or omitting test results (return null).
+An optional callback that allows transforming (return *result*)
+or omitting test results (return *null*).
+
+
+## Contributors
+
+- [Morris Brodersen](https://morrisbrodersen.de)
+- [Frederik Priede](https://github.com/FrederikPriede)

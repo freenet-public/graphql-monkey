@@ -31,7 +31,6 @@ graphql-monkey [options] [options file]
   -n, --count           Set number of tests (default: 5)
   -e, --exit            Exit on first error
   -h, --help            Print help
-  -f, --randomization   Set randomization factor (default: 0.2)
   -r, --require         Require the given module
   -s, --seed            Set randomization seed
   -t, --timeout         Set timeout (ms) per request (default: 2000)
