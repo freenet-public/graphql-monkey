@@ -78,11 +78,15 @@ like authentication.
 
 Additionally, some options may be set via command-line.
 
-### Count (-n, --count, options.count: number)
+### Count (-n, --count)
+
+`count: number`
 
 Sets the number of queries to generate and test.
 
-### Exit (-e, --exit, options.exit: boolean)
+### Exit (-e, --exit)
+
+`exit: boolean`
 
 If set, GQLM will exit after the first failed request.
 Useful to fix failures step-by-step.
@@ -91,9 +95,11 @@ Useful to fix failures step-by-step.
 
 Requires a Node.js module on startup. May be specified multiple times.
 Useful for transpilation, e.g when using TypeScript:
-`gqlm foo.ts --require ts-node/register`
+`gqlm example.ts --require ts-node/register`
 
-### Seed (-s, --seed, options.seed: string)
+### Seed (-s, --seed)
+
+`seed: string`
 
 Sets the seed for random number generation.
 
@@ -102,7 +108,9 @@ Useful to reproduce failures during development.
 
 The seed of the last run is printed at the end of every report.
 
-### Data (options.data: any)
+### Data
+
+`data: any`
 
 Sets the initially known data for argument generation.
 The provided data may have any structure.
@@ -129,7 +137,9 @@ function gqlm() {
 }
 ```
 
-### Aliases (options.aliases: string[][])
+### Aliases
+
+`aliases: string[][]`
 
 Defines aliasing for data. Often, different field names have the same semantics,
 for example `Customer.id` may be equivalent to `Contract.customerId`.
@@ -144,16 +154,22 @@ GQLM will use aliases to match field names and known data more effectively.
 }
 ```
 
-### Request Options (options.requestOptions: request.Options)
+### Request Options
+
+`requestOptions: request.Options`
 
 Options for HTTP requests. See https://www.npmjs.com/package/request-promise
 
-### Endpoint Callback (options.endpointCallback: (endpoint: TestEndpoint) => TestEndpoint | null))
+### Endpoint Callback
+
+`endpointCallback: (endpoint: TestEndpoint) => TestEndpoint | null`
 
 An optional callback that allows transforming (return *endpoint*)
 or omitting test endpoints (return *null*).
 
-### Error Callback (options.errorCallback: (error: GraphQLError) => boolean))
+### Error Callback
+
+`errorCallback: (error: GraphQLError) => boolean`
 
 An optional callback that determines whether an error is
 an unexpected error (return *true*)
@@ -161,7 +177,9 @@ or not (return *false*).
 
 Only unexpected errors will mark a test result as failed.
 
-### Result Callback (options.resultCallback: (result: TestResult) => TestResult | null))
+### Result Callback
+
+`resultCallback: (result: TestResult) => TestResult | null`
 
 An optional callback that allows transforming (return *result*)
 or omitting test results (return *null*).
