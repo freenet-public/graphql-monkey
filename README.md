@@ -1,7 +1,7 @@
 # GraphQL Monkey
 
-A test framework for running fully automated, randomized tests
-against any GraphQL-API.
+:monkey: A test framework for running fully automated, randomized tests
+against any GraphQL API.
 
 
 ## Installation
@@ -13,18 +13,70 @@ npm i graphql-monkey -g
 
 ## Usage
 
-Try `gqlm --url https://countries.trevorblades.com --verbose`.
+Testing a GraphQL API directly via command-line:
+
+```sh
+gqlm --url https://countries.trevorblades.com --verbose
+```
+
 See `gqlm --help` for more options.
 
-See `examples` for advanced testing using files to define options.
-Run with `gqlm examples/countries.ts --require ts-node/register`, for example.
+Most use cases will need an options file with some preparation logic
+(authentication etc., see below for a detailed reference).
+For example:
+
+```js
+const request = require('request-promise-native');
+
+module.exports = { gqlm };
+
+async function gqlm() {
+  return {
+    url: 'https://graphql.example.com',
+    count: 30,
+    requestOptions: await login()
+  };
+}
+
+async function login() {
+  const response = await request({
+    method: 'POST',
+    url: 'https://oauth.example.com',
+    body: {
+      grant_type: 'password',
+      client_id: 'xxxxx',
+      client_secret: 'xxxxx',
+      username: 'gibbon',
+      password: 'bananas'
+    },
+    json: true
+  });
+
+  return {
+    headers: {
+      Authorization: `Bearer ${response.access_token}`
+    }
+  };
+}
+```
+
+Run with `gqlm example.js`.
 
 
 ## Options
 
-Options can be set via command-line arguments
-or via `configure(options: TestOptions)`.
-The `TestOptions` TypeScript interface is an exported member of GQLM.
+Options may be set using an *options file*.
+An options file is a JavaScript file exporting
+a default function or `gqlm` function
+returning an object containing the options.
+The exported function may be async.
+For TypeScript there's a `TestOptionsInput` interface
+which may be used as a return type.
+
+Using the options file, you can implement preparation logic,
+like authentication.
+
+Additionally, some options may be set via command-line.
 
 ### Count (-n, --count, options.count: number)
 
@@ -33,7 +85,7 @@ Sets the number of queries to generate and test.
 ### Exit (-e, --exit, options.exit: boolean)
 
 If set, GQLM will exit after the first failed request.
-This is useful to fix failures step-by-step.
+Useful to fix failures step-by-step.
 
 ### Require (-r, --require)
 
@@ -46,23 +98,9 @@ Useful for transpilation, e.g when using TypeScript:
 Sets the seed for random number generation.
 
 Setting the seed yields a deterministic, reproducible run of tests.
-This is useful to reproduce encountered failures during development.
+Useful to reproduce failures during development.
 
 The seed of the last run is printed at the end of every report.
-
-
-## Options File
-
-Options may be set using an options file.
-An options file must export a default or `gqlm` function
-returning an object containing the options.
-The exported function may be async.
-
-Using the options file, you can implement preparation logic,
-like authentication.
-
-In addition the options outlined above,
-the following options may be set via options file.
 
 ### Data (options.data: any)
 
@@ -76,7 +114,22 @@ and prefer using known values to guess arguments.
 The knowledge is built from the given initial data
 as well as from recorded response bodies.
 
-### Aliases (options.data: string[][])
+For example, if the GraphQL API has arguments or inputs named `fruit` anywhere,
+GQLM can be "helped" to guess input for these fields by providing:
+
+```js
+function gqlm() {
+  return {
+    // ...
+    data: {
+      fruit: ['banana', 'apple', '...'],
+      // ...
+    }
+  }
+}
+```
+
+### Aliases (options.aliases: string[][])
 
 Defines aliasing for data. Often, different field names have the same semantics,
 for example `Customer.id` may be equivalent to `Contract.customerId`.

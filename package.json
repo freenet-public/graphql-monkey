@@ -1,7 +1,7 @@
 {
   "name": "graphql-monkey",
   "version": "0.1.0",
-  "description": "A test framework for running fully automated, randomized tests against any GraphQL-API.",
+  "description": "A test framework for running fully automated, randomized tests against any GraphQL API.",
   "keywords": [
     "graphql",
     "testing",
@@ -79,7 +79,7 @@
     "@types/graphql": "^14.0.7",
     "@types/minimist": "^1.2.0",
     "@types/mocha": "^5.2.6",
-    "@types/node": "^10.12.18",
+    "@types/node": "^10.12.30",
     "@types/prettier": "^1.16.1",
     "@types/request": "^2.48.1",
     "@types/request-promise-native": "^1.0.15",
@@ -90,7 +90,7 @@
     "mocha": "^6.0.2",
     "nyc": "^13.3.0",
     "source-map-support": "^0.5.10",
-    "ts-node": "^8.0.2",
+    "ts-node": "^8.0.3",
     "tslint": "^5.13.1",
     "typescript": "^3.3.3333"
   }
