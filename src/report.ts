@@ -198,7 +198,7 @@ export function printReportToConsole(report: TestReport) {
   );
   console.log(`    Status Codes:`);
   report.statusCodes.forEach((count, statusCode) => {
-    if (statusCode >= 500) {
+    if (statusCode === 0 || statusCode >= 500) {
       console.log(chalk.red(`        ${count}x ${statusCode}`));
     } else if (statusCode >= 400) {
       console.log(chalk.yellow(`        ${count}x ${statusCode}`));
