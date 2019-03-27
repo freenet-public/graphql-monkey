@@ -34,7 +34,11 @@ before(done => {
       }
     ],
     customer: (args: { id: string }) => {
-      return customers.filter(it => it.id === args.id)[0];
+      const customer = customers.find(it => it.id === args.id);
+      if (!customer) {
+        throw new Error('Not found');
+      }
+      return customer;
     }
   };
 

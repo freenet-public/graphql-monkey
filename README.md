@@ -16,7 +16,7 @@ npm i graphql-monkey -g
 Testing a GraphQL API directly via command-line:
 
 ```sh
-gqlm --url https://countries.trevorblades.com --verbose
+gqlm --url https://countries.trevorblades.com
 ```
 
 See `gqlm --help` for more options.
@@ -91,9 +91,23 @@ Sets the number of queries to generate and test.
 If set, GQLM will exit after the first failed request.
 Useful to fix failures step-by-step.
 
+### Printing (-p, --print)
+
+Defines what GQLM will print to the console. Multiple arguments may be specified.
+Possible values are:
+
+- `requests`: Print requests
+- `responses`: Print responses
+- `errors`: Print GraphQL errors
+- `failures`: Print requests and GraphQL errors for failed tests
+- `memory`: Print memory after all tests
+
+For example, `gqlm example.ts -p failures -p memory` will print failures and
+the data in memory after all tests.
+
 ### Require (-r, --require)
 
-Requires a Node.js module on startup. May be specified multiple times.
+Requires a Node.js module on startup. Multiple modules may be specified.
 Useful for transpilation, e.g when using TypeScript:
 `gqlm example.ts --require ts-node/register`
 

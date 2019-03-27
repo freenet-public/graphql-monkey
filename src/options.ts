@@ -7,10 +7,8 @@ import { TestEndpoint } from './endpoint';
 export interface TestOptionsInput {
   url?: string;
   count?: number;
-  randomization?: number;
   exit?: boolean;
   timeout?: number;
-  verbose?: boolean;
   seed?: string;
   requestOptions?: Options;
   aliases?: string[][];
@@ -25,10 +23,8 @@ export interface TestOptionsInput {
 export interface TestOptions {
   url: string;
   count: number;
-  randomization: number;
   exit: boolean;
   timeout: number;
-  verbose: boolean;
   seed: string;
   requestOptions: Options;
   aliases: string[][];
@@ -43,10 +39,8 @@ export interface TestOptions {
 export const BASE_OPTIONS: TestOptions = {
   url: '',
   count: 5,
-  randomization: 0.2,
   exit: false,
   timeout: 2000,
-  verbose: false,
   seed: new Chance().guid(),
   aliases: [],
   requestOptions: { url: '' },

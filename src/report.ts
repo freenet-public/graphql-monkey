@@ -3,8 +3,9 @@ import { TestOptions } from './options';
 import chalk from 'chalk';
 import { format } from 'prettier';
 import { TestResult } from './result';
+import { Memory } from './memory';
+import { PrintConfig } from './cli';
 
-// TODO tranform into class with methods computing/returning aggregates
 export interface TestReport {
   options: TestOptions;
   results: TestResult[];
@@ -113,53 +114,65 @@ export function createReport(results: TestResult[], options: TestOptions) {
   return r;
 }
 
-export function printResultToConsole(result: TestResult) {
+export function printResultToConsole(
+  result: TestResult,
+  printConfig: PrintConfig
+) {
   if (result.failed) {
-    console.log(chalk.yellow(format(result.query, { parser: 'graphql' })));
-    if (result.requestError) {
-      console.log(
-        chalk.red(
-          indent(
-            result.requestError.message ||
-              result.requestError.stack ||
-              'Request Error',
-            4
+    if (printConfig.requests || printConfig.failures) {
+      console.log(chalk.yellow(format(result.query, { parser: 'graphql' })));
+
+      if (result.requestError) {
+        console.log(
+          chalk.red(
+            indent(
+              result.requestError.message ||
+                result.requestError.stack ||
+                'Request Error',
+              4
+            )
           )
-        )
-      );
+        );
+        console.log('');
+      }
+
+      if (printConfig.responses && result.data) {
+        console.log(
+          chalk.gray(indent(JSON.stringify(result.data, null, 2), 4))
+        );
+        console.log('');
+      }
+
+      if ((printConfig.responses || printConfig.errors) && result.errors) {
+        for (const error of result.errors) {
+          console.log(chalk.gray(indent(JSON.stringify(error, null, 2), 4)));
+          console.log('');
+        }
+      }
+
+      for (const error of result.unexpectedErrors) {
+        console.log(chalk.red(indent(JSON.stringify(error, null, 2), 4)));
+        console.log('');
+      }
+
+      console.log(`    ${result.responseTime} ms`);
       console.log('');
     }
-    for (const error of result.unexpectedErrors) {
-      console.log(chalk.red(indent(JSON.stringify(error, null, 2), 4)));
-      console.log('');
-    }
-  } else if (result.options.verbose) {
+  } else if (printConfig.requests) {
     console.log(chalk.green(format(result.query, { parser: 'graphql' })));
-    if (result.requestError) {
-      console.log(
-        chalk.gray(
-          indent(
-            result.requestError.message ||
-              result.requestError.stack ||
-              'Request Error',
-            4
-          )
-        )
-      );
-      console.log('');
-    }
-    if (result.data) {
+
+    if (printConfig.responses && result.data) {
       console.log(chalk.gray(indent(JSON.stringify(result.data, null, 2), 4)));
       console.log('');
     }
-    if (result.errors) {
+
+    if ((printConfig.responses || printConfig.errors) && result.errors) {
       for (const error of result.errors) {
         console.log(chalk.gray(indent(JSON.stringify(error, null, 2), 8)));
         console.log('');
       }
     }
-  }
-  if (result.options.verbose) {
+
     console.log(`    ${result.responseTime} ms`);
     console.log('');
   }
@@ -167,36 +180,31 @@ export function printResultToConsole(result: TestResult) {
 
 export function printReportToConsole(report: TestReport) {
   console.log('STATS');
-  console.log(`    Request Count:          ${report.requestCount}`);
+  console.log(`    ${report.requestCount} tests`);
 
-  if (report.failedCount > 0) {
-    console.log(
-      `    Failed Requests:        ${chalk.red(`${report.failedCount}`)}`
-    );
+  if (report.failedCount === 1) {
+    console.log(chalk.red(`    ${report.failedCount} failed test`));
+  } else if (report.failedCount > 0) {
+    console.log(chalk.red(`    ${report.failedCount} failed tests`));
   } else {
-    console.log(
-      `    Failed Requests:        ${chalk.green(`${report.failedCount}`)}`
-    );
+    console.log(chalk.green(`    ${report.failedCount} failed tests`));
   }
+
+  console.log(chalk.gray(`    ${report.errorCount} total GraphQL errors`));
 
   if (report.unexpectedErrorCount > 0) {
     console.log(
-      `    Unexpected Error Count: ${chalk.red(
-        `${report.unexpectedErrorCount}`
-      )}`
+      chalk.red(`    ${report.unexpectedErrorCount} unexpected GraphQL errors`)
     );
   } else {
     console.log(
-      `    Unexpected Error Count: ${chalk.green(
-        `${report.unexpectedErrorCount}`
-      )}`
+      chalk.green(
+        `    ${report.unexpectedErrorCount} unexpected GraphQL errors`
+      )
     );
   }
 
-  console.log(
-    `    Total Error Count:      ${chalk.gray(`${report.errorCount}`)}`
-  );
-  console.log(`    Status Codes:`);
+  console.log(`    Status codes:`);
   report.statusCodes.forEach((count, statusCode) => {
     if (statusCode === 0 || statusCode >= 500) {
       console.log(chalk.red(`        ${count}x ${statusCode}`));
@@ -207,41 +215,48 @@ export function printReportToConsole(report: TestReport) {
     }
   });
 
-  if (report.unexpectedErrorMessages.size > 0) {
-    console.log(`    Unexpected Error Messages:`);
-    report.unexpectedErrorMessages.forEach((count, message) => {
-      console.log(`        ${count}x ${chalk.red(message)}`);
-    });
-  }
-
-  if (report.unexpectedErrorCodes.size > 0) {
-    console.log(`    Unexpected Error Codes:`);
-    report.unexpectedErrorCodes.forEach((count, code) => {
-      console.log(`        ${count}x ${chalk.red(code)}`);
-    });
-  }
-
   if (report.errorMessages.size > 0) {
-    console.log(`    All Error Messages:`);
+    console.log(chalk.gray(`    All GraphQL error messages:`));
     report.errorMessages.forEach((count, message) => {
-      console.log(`        ${count}x ${chalk.gray(message)}`);
+      console.log(chalk.gray(`        ${count}x ${message}`));
     });
   }
 
   if (report.errorCodes.size > 0) {
-    console.log(`    All Error Codes:`);
+    console.log(`    All GraphQL error codes:`);
     report.errorCodes.forEach((count, code) => {
-      console.log(`        ${count}x ${chalk.gray(code)}`);
+      console.log(chalk.gray(`        ${count}x ${code}`));
     });
   }
 
-  console.log(`    Response Times:`);
+  if (report.unexpectedErrorMessages.size > 0) {
+    console.log(`    Unexpected GraphQL error messages:`);
+    report.unexpectedErrorMessages.forEach((count, message) => {
+      console.log(chalk.red(`        ${count}x ${message}`));
+    });
+  }
+
+  if (report.unexpectedErrorCodes.size > 0) {
+    console.log(`    Unexpected GraphQL error codes:`);
+    report.unexpectedErrorCodes.forEach((count, code) => {
+      console.log(chalk.red(`        ${count}x ${code}`));
+    });
+  }
+
+  console.log(`    Response times:`);
   console.log(`        avg: ${report.responseTimes.avg.toFixed(0)} ms`);
   console.log(`        min: ${report.responseTimes.min.toFixed(0)} ms`);
   console.log(`        max: ${report.responseTimes.max.toFixed(0)} ms`);
 
   console.log('');
   console.log(`Seed was ${report.options.seed}`);
+  console.log('');
+}
+
+export function printMemoryToConsole(memory: Memory) {
+  console.log('MEMORY');
+  console.log(JSON.stringify(memory.serialize(), null, 2));
+  console.log('');
 }
 
 export function indent(text: string, size: number) {

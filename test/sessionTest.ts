@@ -7,8 +7,13 @@ import { makeFieldNode, makeDocumentNode } from '../src/ast';
 
 describe('From the core module', () => {
   describe('the Session class', () => {
+    const options = {
+      ...testOptions(),
+      data: {}
+    };
+
     it('should be able to expand endpoints', async () => {
-      const session = new Session(testOptions());
+      const session = new Session(options);
       await session.init();
 
       assert.equal(session.endpoints.length, 4);
@@ -29,7 +34,7 @@ describe('From the core module', () => {
     });
 
     it('should be able to generate queries for endpoints', async () => {
-      const session = new Session(testOptions());
+      const session = new Session(options);
       await session.init();
 
       const endpoint = session.endpoints.find(
@@ -60,7 +65,7 @@ describe('From the core module', () => {
     });
 
     it('should be able determine if an endpoint can be guessed', async () => {
-      const session = new Session(testOptions());
+      const session = new Session(options);
       await session.init();
 
       const endpoint = session.endpoints.find(
