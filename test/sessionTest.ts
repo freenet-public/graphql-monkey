@@ -46,6 +46,7 @@ describe('From the core module', () => {
         `{
           customer(id: "8bkpFT9hVTJd9)c[fM") {
             id
+            type
             name
           }
         }`.replace(/^ {8}/gm, '')
@@ -58,6 +59,7 @@ describe('From the core module', () => {
         `{
           customer(id: "4") {
             id
+            type
             name
           }
         }`.replace(/^ {8}/gm, '')

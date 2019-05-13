@@ -3,3 +3,4 @@
 --extension ts
 --recursive
 --file ./test/setup.ts
+--timeout 9999

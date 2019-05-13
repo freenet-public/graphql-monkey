@@ -3,13 +3,11 @@ import minimist from 'minimist';
 import { TestOptionsInput, makeOptions } from './options';
 import * as path from 'path';
 import {
-  printReportToConsole,
-  printResultToConsole,
-  createReport,
-  printMemoryToConsole
-} from './report';
+  ConsoleReporter
+} from './console';
 import { firstOf, asArray } from './util';
 import { Session } from './session';
+import { buildReport } from './report';
 
 const { version } = require('../package.json');
 
@@ -32,6 +30,7 @@ export interface PrintConfig {
   errors: boolean;
   failures: boolean;
   memory: boolean;
+  types: boolean;
 }
 
 export const HELP = `
@@ -45,7 +44,8 @@ graphql-monkey [options] [options file]
                           responses: Print responses
                           errors: Print errors
                           failures: Print requests and errors for failed tests
-                          memory: Print memory after all tests
+                          memory: Print memory
+                          types: Print a report for each GraphQL type (with coverage)
   -r, --require         Require the given module
   -s, --seed            Set randomization seed
   -t, --timeout         Set timeout (ms) per request (default: 2000)
@@ -88,6 +88,7 @@ export async function cli(argv: string[]): Promise<number> {
     return 1;
   }
 
+  const reporter = new ConsoleReporter();
   const originalResultCallback = optionsFromFile.resultCallback;
   const options = makeOptions({
     ...optionsWithCliArgs(optionsFromFile, args),
@@ -96,7 +97,7 @@ export async function cli(argv: string[]): Promise<number> {
         ? originalResultCallback(result)
         : result;
       if (r) {
-        printResultToConsole(r, args.print);
+        reporter.printResult(r, args.print);
       }
       return r;
     }
@@ -107,12 +108,17 @@ export async function cli(argv: string[]): Promise<number> {
   await session.init();
   await session.run();
 
+  const report = buildReport(session.getResults(), session.getIntrospection());
+
   if (args.print.memory) {
-    printMemoryToConsole(session.memory);
+    reporter.printMemory(session.memory);
   }
 
-  const report = createReport(session.getResults(), options);
-  printReportToConsole(report);
+  if (args.print.types) {
+    reporter.printTypes(report);
+  }
+
+  reporter.printSummary(report, options);
 
   return report.failedCount > 0 ? 1 : 0;
 }
@@ -167,7 +173,8 @@ export function parseCliArgs(argv: string[]): CliArgs {
       responses: print.indexOf('responses') >= 0,
       errors: print.indexOf('errors') >= 0,
       failures: print.indexOf('failures') >= 0,
-      memory: print.indexOf('memory') >= 0
+      memory: print.indexOf('memory') >= 0,
+      types: print.indexOf('types') >= 0
     },
     require: asArray(parsed.require),
     seed: firstOf(parsed.seed),

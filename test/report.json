@@ -1,0 +1,1730 @@
+{
+  "results": [
+    {
+      "query": "{\n  customer(id: \"6\") {\n    id\n    type\n    name\n  }\n}\n",
+      "queryAst": {
+        "kind": "Document",
+        "definitions": [
+          {
+            "kind": "OperationDefinition",
+            "operation": "query",
+            "selectionSet": {
+              "kind": "SelectionSet",
+              "selections": [
+                {
+                  "kind": "Field",
+                  "name": {
+                    "kind": "Name",
+                    "value": "customer"
+                  },
+                  "arguments": [
+                    {
+                      "kind": "Argument",
+                      "name": {
+                        "kind": "Name",
+                        "value": "id"
+                      },
+                      "value": {
+                        "kind": "StringValue",
+                        "value": "6"
+                      }
+                    }
+                  ],
+                  "selectionSet": {
+                    "kind": "SelectionSet",
+                    "selections": [
+                      {
+                        "kind": "Field",
+                        "name": {
+                          "kind": "Name",
+                          "value": "id"
+                        },
+                        "arguments": [],
+                        "selectionSet": {
+                          "kind": "SelectionSet",
+                          "selections": []
+                        }
+                      },
+                      {
+                        "kind": "Field",
+                        "name": {
+                          "kind": "Name",
+                          "value": "type"
+                        },
+                        "arguments": [],
+                        "selectionSet": {
+                          "kind": "SelectionSet",
+                          "selections": []
+                        }
+                      },
+                      {
+                        "kind": "Field",
+                        "name": {
+                          "kind": "Name",
+                          "value": "name"
+                        },
+                        "arguments": [],
+                        "selectionSet": {
+                          "kind": "SelectionSet",
+                          "selections": []
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "statusCode": 200,
+      "data": {
+        "customer": null
+      },
+      "errors": [
+        {
+          "message": "Not found",
+          "locations": [
+            {
+              "line": 2,
+              "column": 3
+            }
+          ],
+          "path": [
+            "customer"
+          ]
+        }
+      ],
+      "responseTime": 7,
+      "unexpectedErrors": [
+        {
+          "message": "Not found",
+          "locations": [
+            {
+              "line": 2,
+              "column": 3
+            }
+          ],
+          "path": [
+            "customer"
+          ]
+        }
+      ],
+      "failed": true
+    },
+    {
+      "query": "{\n  customer(id: \"4\") {\n    id\n    type\n    name\n  }\n}\n",
+      "queryAst": {
+        "kind": "Document",
+        "definitions": [
+          {
+            "kind": "OperationDefinition",
+            "operation": "query",
+            "selectionSet": {
+              "kind": "SelectionSet",
+              "selections": [
+                {
+                  "kind": "Field",
+                  "name": {
+                    "kind": "Name",
+                    "value": "customer"
+                  },
+                  "arguments": [
+                    {
+                      "kind": "Argument",
+                      "name": {
+                        "kind": "Name",
+                        "value": "id"
+                      },
+                      "value": {
+                        "kind": "StringValue",
+                        "value": "4"
+                      }
+                    }
+                  ],
+                  "selectionSet": {
+                    "kind": "SelectionSet",
+                    "selections": [
+                      {
+                        "kind": "Field",
+                        "name": {
+                          "kind": "Name",
+                          "value": "id"
+                        },
+                        "arguments": [],
+                        "selectionSet": {
+                          "kind": "SelectionSet",
+                          "selections": []
+                        }
+                      },
+                      {
+                        "kind": "Field",
+                        "name": {
+                          "kind": "Name",
+                          "value": "type"
+                        },
+                        "arguments": [],
+                        "selectionSet": {
+                          "kind": "SelectionSet",
+                          "selections": []
+                        }
+                      },
+                      {
+                        "kind": "Field",
+                        "name": {
+                          "kind": "Name",
+                          "value": "name"
+                        },
+                        "arguments": [],
+                        "selectionSet": {
+                          "kind": "SelectionSet",
+                          "selections": []
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "statusCode": 200,
+      "data": {
+        "customer": {
+          "id": "4",
+          "type": "INDIVIDUAL",
+          "name": "Siegmeyer of Catarina"
+        }
+      },
+      "errors": [],
+      "responseTime": 5,
+      "unexpectedErrors": [],
+      "failed": false
+    },
+    {
+      "query": "{\n  hello\n}\n",
+      "queryAst": {
+        "kind": "Document",
+        "definitions": [
+          {
+            "kind": "OperationDefinition",
+            "operation": "query",
+            "selectionSet": {
+              "kind": "SelectionSet",
+              "selections": [
+                {
+                  "kind": "Field",
+                  "name": {
+                    "kind": "Name",
+                    "value": "hello"
+                  },
+                  "arguments": [],
+                  "selectionSet": {
+                    "kind": "SelectionSet",
+                    "selections": []
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "statusCode": 200,
+      "data": {
+        "hello": "Hello world!"
+      },
+      "errors": [],
+      "responseTime": 4,
+      "unexpectedErrors": [],
+      "failed": false
+    },
+    {
+      "query": "{\n  customers {\n    contracts {\n      id\n    }\n  }\n}\n",
+      "queryAst": {
+        "kind": "Document",
+        "definitions": [
+          {
+            "kind": "OperationDefinition",
+            "operation": "query",
+            "selectionSet": {
+              "kind": "SelectionSet",
+              "selections": [
+                {
+                  "kind": "Field",
+                  "name": {
+                    "kind": "Name",
+                    "value": "customers"
+                  },
+                  "arguments": [],
+                  "selectionSet": {
+                    "kind": "SelectionSet",
+                    "selections": [
+                      {
+                        "kind": "Field",
+                        "name": {
+                          "kind": "Name",
+                          "value": "contracts"
+                        },
+                        "arguments": [],
+                        "selectionSet": {
+                          "kind": "SelectionSet",
+                          "selections": [
+                            {
+                              "kind": "Field",
+                              "name": {
+                                "kind": "Name",
+                                "value": "id"
+                              },
+                              "arguments": [],
+                              "selectionSet": {
+                                "kind": "SelectionSet",
+                                "selections": []
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "statusCode": 200,
+      "data": {
+        "customers": [
+          {
+            "contracts": null
+          },
+          {
+            "contracts": null
+          }
+        ]
+      },
+      "errors": [],
+      "responseTime": 8,
+      "unexpectedErrors": [],
+      "failed": false
+    },
+    {
+      "query": "{\n  customers {\n    contracts {\n      id\n    }\n  }\n}\n",
+      "queryAst": {
+        "kind": "Document",
+        "definitions": [
+          {
+            "kind": "OperationDefinition",
+            "operation": "query",
+            "selectionSet": {
+              "kind": "SelectionSet",
+              "selections": [
+                {
+                  "kind": "Field",
+                  "name": {
+                    "kind": "Name",
+                    "value": "customers"
+                  },
+                  "arguments": [],
+                  "selectionSet": {
+                    "kind": "SelectionSet",
+                    "selections": [
+                      {
+                        "kind": "Field",
+                        "name": {
+                          "kind": "Name",
+                          "value": "contracts"
+                        },
+                        "arguments": [],
+                        "selectionSet": {
+                          "kind": "SelectionSet",
+                          "selections": [
+                            {
+                              "kind": "Field",
+                              "name": {
+                                "kind": "Name",
+                                "value": "id"
+                              },
+                              "arguments": [],
+                              "selectionSet": {
+                                "kind": "SelectionSet",
+                                "selections": []
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "statusCode": 200,
+      "data": {
+        "customers": [
+          {
+            "contracts": null
+          },
+          {
+            "contracts": null
+          }
+        ]
+      },
+      "errors": [],
+      "responseTime": 4,
+      "unexpectedErrors": [],
+      "failed": false
+    },
+    {
+      "query": "{\n  customers {\n    contracts {\n      id\n    }\n  }\n}\n",
+      "queryAst": {
+        "kind": "Document",
+        "definitions": [
+          {
+            "kind": "OperationDefinition",
+            "operation": "query",
+            "selectionSet": {
+              "kind": "SelectionSet",
+              "selections": [
+                {
+                  "kind": "Field",
+                  "name": {
+                    "kind": "Name",
+                    "value": "customers"
+                  },
+                  "arguments": [],
+                  "selectionSet": {
+                    "kind": "SelectionSet",
+                    "selections": [
+                      {
+                        "kind": "Field",
+                        "name": {
+                          "kind": "Name",
+                          "value": "contracts"
+                        },
+                        "arguments": [],
+                        "selectionSet": {
+                          "kind": "SelectionSet",
+                          "selections": [
+                            {
+                              "kind": "Field",
+                              "name": {
+                                "kind": "Name",
+                                "value": "id"
+                              },
+                              "arguments": [],
+                              "selectionSet": {
+                                "kind": "SelectionSet",
+                                "selections": []
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "statusCode": 200,
+      "data": {
+        "customers": [
+          {
+            "contracts": null
+          },
+          {
+            "contracts": null
+          }
+        ]
+      },
+      "errors": [],
+      "responseTime": 6,
+      "unexpectedErrors": [],
+      "failed": false
+    },
+    {
+      "query": "{\n  customers {\n    contracts {\n      id\n    }\n  }\n}\n",
+      "queryAst": {
+        "kind": "Document",
+        "definitions": [
+          {
+            "kind": "OperationDefinition",
+            "operation": "query",
+            "selectionSet": {
+              "kind": "SelectionSet",
+              "selections": [
+                {
+                  "kind": "Field",
+                  "name": {
+                    "kind": "Name",
+                    "value": "customers"
+                  },
+                  "arguments": [],
+                  "selectionSet": {
+                    "kind": "SelectionSet",
+                    "selections": [
+                      {
+                        "kind": "Field",
+                        "name": {
+                          "kind": "Name",
+                          "value": "contracts"
+                        },
+                        "arguments": [],
+                        "selectionSet": {
+                          "kind": "SelectionSet",
+                          "selections": [
+                            {
+                              "kind": "Field",
+                              "name": {
+                                "kind": "Name",
+                                "value": "id"
+                              },
+                              "arguments": [],
+                              "selectionSet": {
+                                "kind": "SelectionSet",
+                                "selections": []
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "statusCode": 200,
+      "data": {
+        "customers": [
+          {
+            "contracts": null
+          },
+          {
+            "contracts": null
+          }
+        ]
+      },
+      "errors": [],
+      "responseTime": 7,
+      "unexpectedErrors": [],
+      "failed": false
+    },
+    {
+      "query": "{\n  customers {\n    contracts {\n      id\n    }\n  }\n}\n",
+      "queryAst": {
+        "kind": "Document",
+        "definitions": [
+          {
+            "kind": "OperationDefinition",
+            "operation": "query",
+            "selectionSet": {
+              "kind": "SelectionSet",
+              "selections": [
+                {
+                  "kind": "Field",
+                  "name": {
+                    "kind": "Name",
+                    "value": "customers"
+                  },
+                  "arguments": [],
+                  "selectionSet": {
+                    "kind": "SelectionSet",
+                    "selections": [
+                      {
+                        "kind": "Field",
+                        "name": {
+                          "kind": "Name",
+                          "value": "contracts"
+                        },
+                        "arguments": [],
+                        "selectionSet": {
+                          "kind": "SelectionSet",
+                          "selections": [
+                            {
+                              "kind": "Field",
+                              "name": {
+                                "kind": "Name",
+                                "value": "id"
+                              },
+                              "arguments": [],
+                              "selectionSet": {
+                                "kind": "SelectionSet",
+                                "selections": []
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "statusCode": 200,
+      "data": {
+        "customers": [
+          {
+            "contracts": null
+          },
+          {
+            "contracts": null
+          }
+        ]
+      },
+      "errors": [],
+      "responseTime": 5,
+      "unexpectedErrors": [],
+      "failed": false
+    },
+    {
+      "query": "{\n  customers {\n    contracts {\n      id\n    }\n  }\n}\n",
+      "queryAst": {
+        "kind": "Document",
+        "definitions": [
+          {
+            "kind": "OperationDefinition",
+            "operation": "query",
+            "selectionSet": {
+              "kind": "SelectionSet",
+              "selections": [
+                {
+                  "kind": "Field",
+                  "name": {
+                    "kind": "Name",
+                    "value": "customers"
+                  },
+                  "arguments": [],
+                  "selectionSet": {
+                    "kind": "SelectionSet",
+                    "selections": [
+                      {
+                        "kind": "Field",
+                        "name": {
+                          "kind": "Name",
+                          "value": "contracts"
+                        },
+                        "arguments": [],
+                        "selectionSet": {
+                          "kind": "SelectionSet",
+                          "selections": [
+                            {
+                              "kind": "Field",
+                              "name": {
+                                "kind": "Name",
+                                "value": "id"
+                              },
+                              "arguments": [],
+                              "selectionSet": {
+                                "kind": "SelectionSet",
+                                "selections": []
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "statusCode": 200,
+      "data": {
+        "customers": [
+          {
+            "contracts": null
+          },
+          {
+            "contracts": null
+          }
+        ]
+      },
+      "errors": [],
+      "responseTime": 9,
+      "unexpectedErrors": [],
+      "failed": false
+    },
+    {
+      "query": "{\n  customers {\n    contracts {\n      id\n    }\n  }\n}\n",
+      "queryAst": {
+        "kind": "Document",
+        "definitions": [
+          {
+            "kind": "OperationDefinition",
+            "operation": "query",
+            "selectionSet": {
+              "kind": "SelectionSet",
+              "selections": [
+                {
+                  "kind": "Field",
+                  "name": {
+                    "kind": "Name",
+                    "value": "customers"
+                  },
+                  "arguments": [],
+                  "selectionSet": {
+                    "kind": "SelectionSet",
+                    "selections": [
+                      {
+                        "kind": "Field",
+                        "name": {
+                          "kind": "Name",
+                          "value": "contracts"
+                        },
+                        "arguments": [],
+                        "selectionSet": {
+                          "kind": "SelectionSet",
+                          "selections": [
+                            {
+                              "kind": "Field",
+                              "name": {
+                                "kind": "Name",
+                                "value": "id"
+                              },
+                              "arguments": [],
+                              "selectionSet": {
+                                "kind": "SelectionSet",
+                                "selections": []
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "statusCode": 200,
+      "data": {
+        "customers": [
+          {
+            "contracts": null
+          },
+          {
+            "contracts": null
+          }
+        ]
+      },
+      "errors": [],
+      "responseTime": 4,
+      "unexpectedErrors": [],
+      "failed": false
+    },
+    {
+      "query": "{\n  login(username: \"bkpFT9hVTJd9)c[fMq\", password: \"4f4XEL4KFF&tYIBy\")\n}\n",
+      "queryAst": {
+        "kind": "Document",
+        "definitions": [
+          {
+            "kind": "OperationDefinition",
+            "operation": "query",
+            "selectionSet": {
+              "kind": "SelectionSet",
+              "selections": [
+                {
+                  "kind": "Field",
+                  "name": {
+                    "kind": "Name",
+                    "value": "login"
+                  },
+                  "arguments": [
+                    {
+                      "kind": "Argument",
+                      "name": {
+                        "kind": "Name",
+                        "value": "username"
+                      },
+                      "value": {
+                        "kind": "StringValue",
+                        "value": "bkpFT9hVTJd9)c[fMq"
+                      }
+                    },
+                    {
+                      "kind": "Argument",
+                      "name": {
+                        "kind": "Name",
+                        "value": "password"
+                      },
+                      "value": {
+                        "kind": "StringValue",
+                        "value": "4f4XEL4KFF&tYIBy"
+                      }
+                    }
+                  ],
+                  "selectionSet": {
+                    "kind": "SelectionSet",
+                    "selections": []
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "statusCode": 200,
+      "data": {
+        "login": null
+      },
+      "errors": [],
+      "responseTime": 11,
+      "unexpectedErrors": [],
+      "failed": false
+    },
+    {
+      "query": "{\n  login(username: \"Go0796QD%L*66GS\", password: \"f0KSG[sF@PbD\")\n}\n",
+      "queryAst": {
+        "kind": "Document",
+        "definitions": [
+          {
+            "kind": "OperationDefinition",
+            "operation": "query",
+            "selectionSet": {
+              "kind": "SelectionSet",
+              "selections": [
+                {
+                  "kind": "Field",
+                  "name": {
+                    "kind": "Name",
+                    "value": "login"
+                  },
+                  "arguments": [
+                    {
+                      "kind": "Argument",
+                      "name": {
+                        "kind": "Name",
+                        "value": "username"
+                      },
+                      "value": {
+                        "kind": "StringValue",
+                        "value": "Go0796QD%L*66GS"
+                      }
+                    },
+                    {
+                      "kind": "Argument",
+                      "name": {
+                        "kind": "Name",
+                        "value": "password"
+                      },
+                      "value": {
+                        "kind": "StringValue",
+                        "value": "f0KSG[sF@PbD"
+                      }
+                    }
+                  ],
+                  "selectionSet": {
+                    "kind": "SelectionSet",
+                    "selections": []
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "statusCode": 200,
+      "data": {
+        "login": null
+      },
+      "errors": [],
+      "responseTime": 7,
+      "unexpectedErrors": [],
+      "failed": false
+    },
+    {
+      "query": "{\n  login(username: \"0NxId%CBwNLZOFzV\", password: \"@H#^a3w&N$)xkZ\")\n}\n",
+      "queryAst": {
+        "kind": "Document",
+        "definitions": [
+          {
+            "kind": "OperationDefinition",
+            "operation": "query",
+            "selectionSet": {
+              "kind": "SelectionSet",
+              "selections": [
+                {
+                  "kind": "Field",
+                  "name": {
+                    "kind": "Name",
+                    "value": "login"
+                  },
+                  "arguments": [
+                    {
+                      "kind": "Argument",
+                      "name": {
+                        "kind": "Name",
+                        "value": "username"
+                      },
+                      "value": {
+                        "kind": "StringValue",
+                        "value": "0NxId%CBwNLZOFzV"
+                      }
+                    },
+                    {
+                      "kind": "Argument",
+                      "name": {
+                        "kind": "Name",
+                        "value": "password"
+                      },
+                      "value": {
+                        "kind": "StringValue",
+                        "value": "@H#^a3w&N$)xkZ"
+                      }
+                    }
+                  ],
+                  "selectionSet": {
+                    "kind": "SelectionSet",
+                    "selections": []
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "statusCode": 200,
+      "data": {
+        "login": null
+      },
+      "errors": [],
+      "responseTime": 4,
+      "unexpectedErrors": [],
+      "failed": false
+    },
+    {
+      "query": "{\n  login(username: \"Z1M3Cv8(\", password: \"WzHob\")\n}\n",
+      "queryAst": {
+        "kind": "Document",
+        "definitions": [
+          {
+            "kind": "OperationDefinition",
+            "operation": "query",
+            "selectionSet": {
+              "kind": "SelectionSet",
+              "selections": [
+                {
+                  "kind": "Field",
+                  "name": {
+                    "kind": "Name",
+                    "value": "login"
+                  },
+                  "arguments": [
+                    {
+                      "kind": "Argument",
+                      "name": {
+                        "kind": "Name",
+                        "value": "username"
+                      },
+                      "value": {
+                        "kind": "StringValue",
+                        "value": "Z1M3Cv8("
+                      }
+                    },
+                    {
+                      "kind": "Argument",
+                      "name": {
+                        "kind": "Name",
+                        "value": "password"
+                      },
+                      "value": {
+                        "kind": "StringValue",
+                        "value": "WzHob"
+                      }
+                    }
+                  ],
+                  "selectionSet": {
+                    "kind": "SelectionSet",
+                    "selections": []
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "statusCode": 200,
+      "data": {
+        "login": null
+      },
+      "errors": [],
+      "responseTime": 5,
+      "unexpectedErrors": [],
+      "failed": false
+    },
+    {
+      "query": "{\n  login(username: \"9u4F7Ix@P[DJBNt5#8c\", password: \"zJZ*nEHB)\")\n}\n",
+      "queryAst": {
+        "kind": "Document",
+        "definitions": [
+          {
+            "kind": "OperationDefinition",
+            "operation": "query",
+            "selectionSet": {
+              "kind": "SelectionSet",
+              "selections": [
+                {
+                  "kind": "Field",
+                  "name": {
+                    "kind": "Name",
+                    "value": "login"
+                  },
+                  "arguments": [
+                    {
+                      "kind": "Argument",
+                      "name": {
+                        "kind": "Name",
+                        "value": "username"
+                      },
+                      "value": {
+                        "kind": "StringValue",
+                        "value": "9u4F7Ix@P[DJBNt5#8c"
+                      }
+                    },
+                    {
+                      "kind": "Argument",
+                      "name": {
+                        "kind": "Name",
+                        "value": "password"
+                      },
+                      "value": {
+                        "kind": "StringValue",
+                        "value": "zJZ*nEHB)"
+                      }
+                    }
+                  ],
+                  "selectionSet": {
+                    "kind": "SelectionSet",
+                    "selections": []
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "statusCode": 200,
+      "data": {
+        "login": null
+      },
+      "errors": [],
+      "responseTime": 4,
+      "unexpectedErrors": [],
+      "failed": false
+    },
+    {
+      "query": "{\n  customers {\n    id\n    type\n    name\n  }\n}\n",
+      "queryAst": {
+        "kind": "Document",
+        "definitions": [
+          {
+            "kind": "OperationDefinition",
+            "operation": "query",
+            "selectionSet": {
+              "kind": "SelectionSet",
+              "selections": [
+                {
+                  "kind": "Field",
+                  "name": {
+                    "kind": "Name",
+                    "value": "customers"
+                  },
+                  "arguments": [],
+                  "selectionSet": {
+                    "kind": "SelectionSet",
+                    "selections": [
+                      {
+                        "kind": "Field",
+                        "name": {
+                          "kind": "Name",
+                          "value": "id"
+                        },
+                        "arguments": [],
+                        "selectionSet": {
+                          "kind": "SelectionSet",
+                          "selections": []
+                        }
+                      },
+                      {
+                        "kind": "Field",
+                        "name": {
+                          "kind": "Name",
+                          "value": "type"
+                        },
+                        "arguments": [],
+                        "selectionSet": {
+                          "kind": "SelectionSet",
+                          "selections": []
+                        }
+                      },
+                      {
+                        "kind": "Field",
+                        "name": {
+                          "kind": "Name",
+                          "value": "name"
+                        },
+                        "arguments": [],
+                        "selectionSet": {
+                          "kind": "SelectionSet",
+                          "selections": []
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "statusCode": 200,
+      "data": {
+        "customers": [
+          {
+            "id": "4",
+            "type": "INDIVIDUAL",
+            "name": "Siegmeyer of Catarina"
+          },
+          {
+            "id": "5",
+            "type": "COMPANY",
+            "name": "Blades of the Darkmoon"
+          }
+        ]
+      },
+      "errors": [],
+      "responseTime": 5,
+      "unexpectedErrors": [],
+      "failed": false
+    },
+    {
+      "query": "{\n  customers {\n    id\n    type\n    name\n  }\n}\n",
+      "queryAst": {
+        "kind": "Document",
+        "definitions": [
+          {
+            "kind": "OperationDefinition",
+            "operation": "query",
+            "selectionSet": {
+              "kind": "SelectionSet",
+              "selections": [
+                {
+                  "kind": "Field",
+                  "name": {
+                    "kind": "Name",
+                    "value": "customers"
+                  },
+                  "arguments": [],
+                  "selectionSet": {
+                    "kind": "SelectionSet",
+                    "selections": [
+                      {
+                        "kind": "Field",
+                        "name": {
+                          "kind": "Name",
+                          "value": "id"
+                        },
+                        "arguments": [],
+                        "selectionSet": {
+                          "kind": "SelectionSet",
+                          "selections": []
+                        }
+                      },
+                      {
+                        "kind": "Field",
+                        "name": {
+                          "kind": "Name",
+                          "value": "type"
+                        },
+                        "arguments": [],
+                        "selectionSet": {
+                          "kind": "SelectionSet",
+                          "selections": []
+                        }
+                      },
+                      {
+                        "kind": "Field",
+                        "name": {
+                          "kind": "Name",
+                          "value": "name"
+                        },
+                        "arguments": [],
+                        "selectionSet": {
+                          "kind": "SelectionSet",
+                          "selections": []
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "statusCode": 200,
+      "data": {
+        "customers": [
+          {
+            "id": "4",
+            "type": "INDIVIDUAL",
+            "name": "Siegmeyer of Catarina"
+          },
+          {
+            "id": "5",
+            "type": "COMPANY",
+            "name": "Blades of the Darkmoon"
+          }
+        ]
+      },
+      "errors": [],
+      "responseTime": 7,
+      "unexpectedErrors": [],
+      "failed": false
+    },
+    {
+      "query": "{\n  customers {\n    id\n    type\n    name\n  }\n}\n",
+      "queryAst": {
+        "kind": "Document",
+        "definitions": [
+          {
+            "kind": "OperationDefinition",
+            "operation": "query",
+            "selectionSet": {
+              "kind": "SelectionSet",
+              "selections": [
+                {
+                  "kind": "Field",
+                  "name": {
+                    "kind": "Name",
+                    "value": "customers"
+                  },
+                  "arguments": [],
+                  "selectionSet": {
+                    "kind": "SelectionSet",
+                    "selections": [
+                      {
+                        "kind": "Field",
+                        "name": {
+                          "kind": "Name",
+                          "value": "id"
+                        },
+                        "arguments": [],
+                        "selectionSet": {
+                          "kind": "SelectionSet",
+                          "selections": []
+                        }
+                      },
+                      {
+                        "kind": "Field",
+                        "name": {
+                          "kind": "Name",
+                          "value": "type"
+                        },
+                        "arguments": [],
+                        "selectionSet": {
+                          "kind": "SelectionSet",
+                          "selections": []
+                        }
+                      },
+                      {
+                        "kind": "Field",
+                        "name": {
+                          "kind": "Name",
+                          "value": "name"
+                        },
+                        "arguments": [],
+                        "selectionSet": {
+                          "kind": "SelectionSet",
+                          "selections": []
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "statusCode": 200,
+      "data": {
+        "customers": [
+          {
+            "id": "4",
+            "type": "INDIVIDUAL",
+            "name": "Siegmeyer of Catarina"
+          },
+          {
+            "id": "5",
+            "type": "COMPANY",
+            "name": "Blades of the Darkmoon"
+          }
+        ]
+      },
+      "errors": [],
+      "responseTime": 5,
+      "unexpectedErrors": [],
+      "failed": false
+    },
+    {
+      "query": "{\n  customers {\n    id\n    type\n    name\n  }\n}\n",
+      "queryAst": {
+        "kind": "Document",
+        "definitions": [
+          {
+            "kind": "OperationDefinition",
+            "operation": "query",
+            "selectionSet": {
+              "kind": "SelectionSet",
+              "selections": [
+                {
+                  "kind": "Field",
+                  "name": {
+                    "kind": "Name",
+                    "value": "customers"
+                  },
+                  "arguments": [],
+                  "selectionSet": {
+                    "kind": "SelectionSet",
+                    "selections": [
+                      {
+                        "kind": "Field",
+                        "name": {
+                          "kind": "Name",
+                          "value": "id"
+                        },
+                        "arguments": [],
+                        "selectionSet": {
+                          "kind": "SelectionSet",
+                          "selections": []
+                        }
+                      },
+                      {
+                        "kind": "Field",
+                        "name": {
+                          "kind": "Name",
+                          "value": "type"
+                        },
+                        "arguments": [],
+                        "selectionSet": {
+                          "kind": "SelectionSet",
+                          "selections": []
+                        }
+                      },
+                      {
+                        "kind": "Field",
+                        "name": {
+                          "kind": "Name",
+                          "value": "name"
+                        },
+                        "arguments": [],
+                        "selectionSet": {
+                          "kind": "SelectionSet",
+                          "selections": []
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "statusCode": 200,
+      "data": {
+        "customers": [
+          {
+            "id": "4",
+            "type": "INDIVIDUAL",
+            "name": "Siegmeyer of Catarina"
+          },
+          {
+            "id": "5",
+            "type": "COMPANY",
+            "name": "Blades of the Darkmoon"
+          }
+        ]
+      },
+      "errors": [],
+      "responseTime": 5,
+      "unexpectedErrors": [],
+      "failed": false
+    },
+    {
+      "query": "{\n  customers {\n    id\n    type\n    name\n  }\n}\n",
+      "queryAst": {
+        "kind": "Document",
+        "definitions": [
+          {
+            "kind": "OperationDefinition",
+            "operation": "query",
+            "selectionSet": {
+              "kind": "SelectionSet",
+              "selections": [
+                {
+                  "kind": "Field",
+                  "name": {
+                    "kind": "Name",
+                    "value": "customers"
+                  },
+                  "arguments": [],
+                  "selectionSet": {
+                    "kind": "SelectionSet",
+                    "selections": [
+                      {
+                        "kind": "Field",
+                        "name": {
+                          "kind": "Name",
+                          "value": "id"
+                        },
+                        "arguments": [],
+                        "selectionSet": {
+                          "kind": "SelectionSet",
+                          "selections": []
+                        }
+                      },
+                      {
+                        "kind": "Field",
+                        "name": {
+                          "kind": "Name",
+                          "value": "type"
+                        },
+                        "arguments": [],
+                        "selectionSet": {
+                          "kind": "SelectionSet",
+                          "selections": []
+                        }
+                      },
+                      {
+                        "kind": "Field",
+                        "name": {
+                          "kind": "Name",
+                          "value": "name"
+                        },
+                        "arguments": [],
+                        "selectionSet": {
+                          "kind": "SelectionSet",
+                          "selections": []
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "statusCode": 200,
+      "data": {
+        "customers": [
+          {
+            "id": "4",
+            "type": "INDIVIDUAL",
+            "name": "Siegmeyer of Catarina"
+          },
+          {
+            "id": "5",
+            "type": "COMPANY",
+            "name": "Blades of the Darkmoon"
+          }
+        ]
+      },
+      "errors": [],
+      "responseTime": 4,
+      "unexpectedErrors": [],
+      "failed": false
+    }
+  ],
+  "requestCount": 20,
+  "failedCount": 1,
+  "statusCodes": [
+    {
+      "key": 200,
+      "count": 20
+    }
+  ],
+  "errorCount": 1,
+  "errorMessages": [
+    {
+      "key": "Not found",
+      "count": 1
+    }
+  ],
+  "errorCodes": [],
+  "unexpectedErrorCount": 1,
+  "unexpectedErrorMessages": [
+    {
+      "key": "Not found",
+      "count": 1
+    }
+  ],
+  "unexpectedErrorCodes": [],
+  "requestErrorCount": 0,
+  "responseTimes": {
+    "avg": 5.8,
+    "min": 4,
+    "max": 11,
+    "total": 116
+  },
+  "types": [
+    {
+      "name": "Query",
+      "kind": "OBJECT",
+      "coverage": 1,
+      "fields": [
+        {
+          "name": "hello",
+          "count": 1,
+          "expectedErrors": [],
+          "unexpectedErrors": []
+        },
+        {
+          "name": "customers",
+          "count": 12,
+          "expectedErrors": [],
+          "unexpectedErrors": []
+        },
+        {
+          "name": "customer",
+          "count": 2,
+          "expectedErrors": [],
+          "unexpectedErrors": []
+        },
+        {
+          "name": "login",
+          "count": 5,
+          "expectedErrors": [],
+          "unexpectedErrors": []
+        }
+      ]
+    },
+    {
+      "name": "String",
+      "kind": "SCALAR",
+      "coverage": 1,
+      "count": 22
+    },
+    {
+      "name": "Int",
+      "kind": "SCALAR",
+      "coverage": 0,
+      "count": 0
+    },
+    {
+      "name": "Customer",
+      "kind": "INTERFACE",
+      "coverage": 1,
+      "fields": [
+        {
+          "name": "id",
+          "count": 7,
+          "expectedErrors": [],
+          "unexpectedErrors": []
+        },
+        {
+          "name": "type",
+          "count": 7,
+          "expectedErrors": [],
+          "unexpectedErrors": []
+        },
+        {
+          "name": "name",
+          "count": 7,
+          "expectedErrors": [],
+          "unexpectedErrors": []
+        },
+        {
+          "name": "contracts",
+          "count": 7,
+          "expectedErrors": [],
+          "unexpectedErrors": []
+        }
+      ]
+    },
+    {
+      "name": "CustomerType",
+      "kind": "ENUM",
+      "coverage": 1,
+      "values": [
+        {
+          "name": "INDIVIDUAL",
+          "count": 6
+        },
+        {
+          "name": "COMPANY",
+          "count": 5
+        }
+      ]
+    },
+    {
+      "name": "Contract",
+      "kind": "OBJECT",
+      "coverage": 1,
+      "fields": [
+        {
+          "name": "id",
+          "count": 7,
+          "expectedErrors": [],
+          "unexpectedErrors": []
+        }
+      ]
+    },
+    {
+      "name": "Boolean",
+      "kind": "SCALAR",
+      "coverage": 1,
+      "count": 5
+    },
+    {
+      "name": "Individual",
+      "kind": "OBJECT",
+      "coverage": 0,
+      "fields": [
+        {
+          "name": "id",
+          "count": 0,
+          "expectedErrors": [],
+          "unexpectedErrors": []
+        },
+        {
+          "name": "type",
+          "count": 0,
+          "expectedErrors": [],
+          "unexpectedErrors": []
+        },
+        {
+          "name": "name",
+          "count": 0,
+          "expectedErrors": [],
+          "unexpectedErrors": []
+        },
+        {
+          "name": "contracts",
+          "count": 0,
+          "expectedErrors": [],
+          "unexpectedErrors": []
+        },
+        {
+          "name": "person",
+          "count": 0,
+          "expectedErrors": [],
+          "unexpectedErrors": []
+        }
+      ]
+    },
+    {
+      "name": "Person",
+      "kind": "OBJECT",
+      "coverage": 0,
+      "fields": [
+        {
+          "name": "firstname",
+          "count": 0,
+          "expectedErrors": [],
+          "unexpectedErrors": []
+        },
+        {
+          "name": "lastname",
+          "count": 0,
+          "expectedErrors": [],
+          "unexpectedErrors": []
+        },
+        {
+          "name": "birthdate",
+          "count": 0,
+          "expectedErrors": [],
+          "unexpectedErrors": []
+        }
+      ]
+    },
+    {
+      "name": "Date",
+      "kind": "SCALAR",
+      "coverage": 0,
+      "count": 0
+    },
+    {
+      "name": "Company",
+      "kind": "OBJECT",
+      "coverage": 0,
+      "fields": [
+        {
+          "name": "id",
+          "count": 0,
+          "expectedErrors": [],
+          "unexpectedErrors": []
+        },
+        {
+          "name": "type",
+          "count": 0,
+          "expectedErrors": [],
+          "unexpectedErrors": []
+        },
+        {
+          "name": "name",
+          "count": 0,
+          "expectedErrors": [],
+          "unexpectedErrors": []
+        },
+        {
+          "name": "contracts",
+          "count": 0,
+          "expectedErrors": [],
+          "unexpectedErrors": []
+        },
+        {
+          "name": "form",
+          "count": 0,
+          "expectedErrors": [],
+          "unexpectedErrors": []
+        },
+        {
+          "name": "employees",
+          "count": 0,
+          "expectedErrors": [],
+          "unexpectedErrors": []
+        }
+      ]
+    },
+    {
+      "name": "Unused",
+      "kind": "SCALAR",
+      "coverage": 0,
+      "count": 0
+    },
+    {
+      "name": "Hidden",
+      "kind": "OBJECT",
+      "coverage": 0,
+      "fields": [
+        {
+          "name": "foo",
+          "count": 0,
+          "expectedErrors": [],
+          "unexpectedErrors": []
+        }
+      ]
+    }
+  ],
+  "coverage": 0.46153846153846156
+}

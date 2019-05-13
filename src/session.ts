@@ -133,9 +133,9 @@ export class Session {
         timeout
       });
 
-      const unexpectedErrors: GraphQLError[] = (
-        response.body.errors || []
-      ).filter(
+      const errors = response.body.errors || [];
+
+      const unexpectedErrors: GraphQLError[] = errors.filter(
         (error: GraphQLError) =>
           !errorCallback || errorCallback(error, this.options)
       );
@@ -143,22 +143,23 @@ export class Session {
       this.memory.write([], response.body.data);
 
       result = {
-        options: this.options,
         query,
         queryAst,
         statusCode: response.statusCode,
-        ...response.body,
+        data: response.body.data,
+        errors,
         responseTime: Date.now() - t,
         unexpectedErrors,
         failed: unexpectedErrors.length > 0
       };
     } catch (err) {
       result = {
-        options: this.options,
         query,
         queryAst,
         statusCode: 0,
         responseTime: Date.now() - t,
+        data: undefined,
+        errors: [],
         unexpectedErrors: [],
         requestError: err,
         failed: true
@@ -484,7 +485,7 @@ export class Session {
       case 'INPUT_OBJECT':
         return type.inputFields.reduce(
           (g, f) => g && this.canGuessInput(f),
-          true
+          true as boolean
         );
       case 'OBJECT':
         // generating query objects in inputs is not supported

@@ -1,19 +1,41 @@
 import * as assert from 'assert';
-import { printReportToConsole, createReport } from '../src/report';
+import { buildReport, TestReport } from '../src/report';
 import { gqlm as testOptions } from './options';
 import { Session } from '../src/session';
+import { writeFileSync } from 'fs';
 
 describe('From the report module', () => {
-  describe('the printReportToConsole function', () => {
-    it('should print a report', async () => {
-      const options = {
-        ...testOptions()
-      };
-      const session = new Session(options);
+  describe('the buildReport function', () => {
+    it('should build a report', async () => {
+      const session = new Session(testOptions());
       await session.init();
       const results = await session.run();
-      const report = createReport(results, options);
-      printReportToConsole(report);
+      const report = buildReport(results, session.getIntrospection());
+
+      writeFileSync('test/report.actual.json', JSON.stringify(report, null, 2));
+
+      assert.deepEqual(
+        ignoreResponseTimes(report),
+        ignoreResponseTimes(require('./report.json'))
+      );
     });
+
+    function ignoreResponseTimes(report: TestReport): TestReport {
+      return {
+        ...report,
+        results: report.results.map(it => {
+          return {
+            ...it,
+            responseTime: 0
+          };
+        }),
+        responseTimes: {
+          avg: 0,
+          max: 0,
+          min: 0,
+          total: 0
+        }
+      };
+    }
   });
 });

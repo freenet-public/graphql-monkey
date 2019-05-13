@@ -1,23 +1,26 @@
-// tslint:disable:no-console
-import { TestOptions } from './options';
-import chalk from 'chalk';
-import { format } from 'prettier';
 import { TestResult } from './result';
-import { Memory } from './memory';
-import { PrintConfig } from './cli';
+import {
+  GraphQLError,
+  IntrospectionQuery,
+  IntrospectionField,
+  IntrospectionType,
+  IntrospectionEnumValue,
+  IntrospectionObjectType,
+  visit
+} from 'graphql';
+import { getIntrospectionType, getIntrospectionOperationTypeName } from './introspection';
 
 export interface TestReport {
-  options: TestOptions;
   results: TestResult[];
   requestCount: number;
   failedCount: number;
-  statusCodes: Map<number, number>;
+  statusCodes: NumberCount[];
   errorCount: number;
-  errorMessages: Map<string, number>;
-  errorCodes: Map<string, number>;
+  errorMessages: KeyCount[];
+  errorCodes: KeyCount[];
   unexpectedErrorCount: number;
-  unexpectedErrorMessages: Map<string, number>;
-  unexpectedErrorCodes: Map<string, number>;
+  unexpectedErrorMessages: KeyCount[];
+  unexpectedErrorCodes: KeyCount[];
   requestErrorCount: number;
   responseTimes: {
     avg: number;
@@ -25,250 +28,406 @@ export interface TestReport {
     max: number;
     total: number;
   };
+  types: TypeReport[];
+  coverage: number;
 }
 
-export function createReport(results: TestResult[], options: TestOptions) {
-  const r = results.reduce<TestReport>(
-    (report: TestReport, result: TestResult) => {
-      ++report.requestCount;
+export interface NumberCount {
+  key: number;
+  count: number;
+}
 
-      if (result.failed) {
-        ++report.failedCount;
-      }
+export interface KeyCount {
+  key: string;
+  count: number;
+}
 
-      if (result.requestError) {
-        ++report.requestErrorCount;
-      }
+export type TypeReport =
+  | ObjectTypeReport
+  | InterfaceTypeReport
+  | EnumTypeReport
+  | ScalarTypeReport
+  | InputObjectTypeReport
+  | UnionTypeReport;
 
-      report.statusCodes.set(
-        result.statusCode,
-        (report.statusCodes.get(result.statusCode) || 0) + 1
-      );
+export interface ObjectTypeReport {
+  name: string;
+  kind: 'OBJECT';
+  coverage: number;
+  fields: FieldReport[];
+}
 
-      if (result.errors) {
-        for (const error of result.errors) {
-          ++report.errorCount;
-          report.errorMessages.set(
-            error.message,
-            (report.errorMessages.get(error.message) || 0) + 1
-          );
-          if (error.extensions && error.extensions.code) {
-            report.errorCodes.set(
-              error.extensions.code,
-              (report.errorCodes.get(error.extensions.code) || 0) + 1
-            );
-          }
-        }
-      }
+export interface InterfaceTypeReport {
+  name: string;
+  kind: 'INTERFACE';
+  coverage: number;
+  fields: FieldReport[];
+}
 
-      for (const error of result.unexpectedErrors) {
-        ++report.unexpectedErrorCount;
-        report.unexpectedErrorMessages.set(
-          error.message,
-          (report.unexpectedErrorMessages.get(error.message) || 0) + 1
-        );
-        if (error.extensions && error.extensions.code) {
-          report.unexpectedErrorCodes.set(
-            error.extensions.code,
-            (report.unexpectedErrorCodes.get(error.extensions.code) || 0) + 1
-          );
-        }
-      }
+export interface FieldReport {
+  name: string;
+  count: number;
+  expectedErrors: GraphQLError[];
+  unexpectedErrors: GraphQLError[];
+}
 
-      report.responseTimes.total += result.responseTime;
-      report.responseTimes.avg =
-        report.responseTimes.total / report.requestCount;
-      report.responseTimes.min = Math.min(
-        report.responseTimes.min,
-        result.responseTime
-      );
-      report.responseTimes.max = Math.max(
-        report.responseTimes.max,
-        result.responseTime
-      );
+export interface EnumTypeReport {
+  name: string;
+  kind: 'ENUM';
+  coverage: number;
+  values: EnumValueReport[];
+}
 
+export interface EnumValueReport {
+  name: string;
+  count: number;
+}
+
+export interface ScalarTypeReport {
+  name: string;
+  kind: 'SCALAR';
+  coverage: number;
+  count: number;
+}
+
+export interface InputObjectTypeReport {
+  name: string;
+  kind: 'INPUT_OBJECT';
+  coverage: number;
+}
+
+export interface UnionTypeReport {
+  name: string;
+  kind: 'UNION';
+  coverage: number;
+}
+
+export function buildReport(
+  results: TestResult[],
+  introspection: IntrospectionQuery
+) {
+  return results.reduce<TestReport>(
+    (report, it) => {
+      updateReport(report, it, introspection);
       return report;
     },
-    {
-      options,
-      results,
-      requestCount: 0,
-      failedCount: 0,
-      statusCodes: new Map<number, number>(),
-      errorCount: 0,
-      errorMessages: new Map<string, number>(),
-      errorCodes: new Map<string, number>(),
-      unexpectedErrorCount: 0,
-      unexpectedErrorMessages: new Map<string, number>(),
-      unexpectedErrorCodes: new Map<string, number>(),
-      requestErrorCount: 0,
-      responseTimes: {
-        avg: 0,
-        min: 999999,
-        max: 0,
-        total: 0
-      }
+    initReport(introspection)
+  );
+}
+
+export function updateReport(report: TestReport, result: TestResult, introspection: IntrospectionQuery) {
+  report.results.push(result);
+
+  ++report.requestCount;
+
+  if (result.failed) {
+    ++report.failedCount;
+  }
+
+  if (result.requestError) {
+    ++report.requestErrorCount;
+  }
+
+  const statusCodeCount = report.statusCodes.find(it => it.key === result.statusCode);
+  if (statusCodeCount) {
+      ++statusCodeCount.count;
+    } else {
+      report.statusCodes.push({
+        key: result.statusCode,
+        count: 1
+      });
     }
+
+  report.responseTimes.total += result.responseTime;
+  report.responseTimes.avg = report.responseTimes.total / report.requestCount;
+  report.responseTimes.min = Math.min(
+    report.responseTimes.min,
+    result.responseTime
+  );
+  report.responseTimes.max = Math.max(
+    report.responseTimes.max,
+    result.responseTime
   );
 
-  return r;
+  updateErrorReports(report, result);
+  updateTypeReports(report, result, introspection);
+
+  report.coverage = report.types.reduce((c, t) => c + t.coverage, 0) / report.types.length;
 }
 
-export function printResultToConsole(
-  result: TestResult,
-  printConfig: PrintConfig
-) {
-  if (result.failed) {
-    if (printConfig.requests || printConfig.failures) {
-      console.log(chalk.yellow(format(result.query, { parser: 'graphql' })));
+export function updateErrorReports(report: TestReport, result: TestResult) {
+  for (const error of result.errors) {
+    ++report.errorCount;
 
-      if (result.requestError) {
-        console.log(
-          chalk.red(
-            indent(
-              result.requestError.message ||
-                result.requestError.stack ||
-                'Request Error',
-              4
-            )
-          )
-        );
-        console.log('');
-      }
-
-      if (printConfig.responses && result.data) {
-        console.log(
-          chalk.gray(indent(JSON.stringify(result.data, null, 2), 4))
-        );
-        console.log('');
-      }
-
-      if ((printConfig.responses || printConfig.errors) && result.errors) {
-        for (const error of result.errors) {
-          console.log(chalk.gray(indent(JSON.stringify(error, null, 2), 4)));
-          console.log('');
-        }
-      }
-
-      for (const error of result.unexpectedErrors) {
-        console.log(chalk.red(indent(JSON.stringify(error, null, 2), 4)));
-        console.log('');
-      }
-
-      console.log(`    ${result.responseTime} ms`);
-      console.log('');
-    }
-  } else if (printConfig.requests) {
-    console.log(chalk.green(format(result.query, { parser: 'graphql' })));
-
-    if (printConfig.responses && result.data) {
-      console.log(chalk.gray(indent(JSON.stringify(result.data, null, 2), 4)));
-      console.log('');
-    }
-
-    if ((printConfig.responses || printConfig.errors) && result.errors) {
-      for (const error of result.errors) {
-        console.log(chalk.gray(indent(JSON.stringify(error, null, 2), 8)));
-        console.log('');
-      }
-    }
-
-    console.log(`    ${result.responseTime} ms`);
-    console.log('');
-  }
-}
-
-export function printReportToConsole(report: TestReport) {
-  console.log('STATS');
-  console.log(`    ${report.requestCount} tests`);
-
-  if (report.failedCount === 1) {
-    console.log(chalk.red(`    ${report.failedCount} failed test`));
-  } else if (report.failedCount > 0) {
-    console.log(chalk.red(`    ${report.failedCount} failed tests`));
-  } else {
-    console.log(chalk.green(`    ${report.failedCount} failed tests`));
-  }
-
-  console.log(chalk.gray(`    ${report.errorCount} total GraphQL errors`));
-
-  if (report.unexpectedErrorCount > 0) {
-    console.log(
-      chalk.red(`    ${report.unexpectedErrorCount} unexpected GraphQL errors`)
-    );
-  } else {
-    console.log(
-      chalk.green(
-        `    ${report.unexpectedErrorCount} unexpected GraphQL errors`
-      )
-    );
-  }
-
-  console.log(`    Status codes:`);
-  report.statusCodes.forEach((count, statusCode) => {
-    if (statusCode === 0 || statusCode >= 500) {
-      console.log(chalk.red(`        ${count}x ${statusCode}`));
-    } else if (statusCode >= 400) {
-      console.log(chalk.yellow(`        ${count}x ${statusCode}`));
+    const messageCount = report.errorMessages.find(it => it.key === error.message);
+    if (messageCount) {
+      ++messageCount.count;
     } else {
-      console.log(chalk.green(`        ${count}x ${statusCode}`));
+      report.errorMessages.push({
+        key: error.message,
+        count: 1
+      });
+    }
+
+    const code = error.extensions && error.extensions.code;
+
+    if (code) {
+      const codeCount = report.errorCodes.find(it => it.key === code);
+      if (codeCount) {
+        ++codeCount.count;
+      } else {
+        report.errorCodes.push({
+          key: error.message,
+          count: 1
+        });
+      }
+    }
+  }
+
+  for (const error of result.unexpectedErrors) {
+    ++report.unexpectedErrorCount;
+
+    const messageCount = report.unexpectedErrorMessages.find(it => it.key === error.message);
+    if (messageCount) {
+      ++messageCount.count;
+    } else {
+      report.unexpectedErrorMessages.push({
+        key: error.message,
+        count: 1
+      });
+    }
+
+    const code = error.extensions && error.extensions.code;
+
+    if (code) {
+      const codeCount = report.unexpectedErrorCodes.find(it => it.key === code);
+      if (codeCount) {
+        ++codeCount.count;
+      } else {
+        report.unexpectedErrorCodes.push({
+          key: error.message,
+          count: 1
+        });
+      }
+    }
+  }
+}
+
+export function updateTypeReports(report: TestReport, result: TestResult, introspection: IntrospectionQuery) {
+  visit(result.queryAst, {
+    OperationDefinition(opNode) {
+      const operationTypeName = getIntrospectionOperationTypeName(introspection, opNode.operation);
+
+      if (!operationTypeName) {
+        throw new Error(`Bad operation ${opNode.operation}`);
+      }
+
+      const path: string[] = [];
+      const stack: Array<IntrospectionType | undefined> = [];
+
+      visit(opNode, {
+        Field: {
+          enter(node) {
+            path.push(node.name.value);
+
+            const parentType = stack.length > 0 ? stack[stack.length - 1] : getIntrospectionType(introspection, operationTypeName);
+            if (!parentType) {
+              throw new Error(`Undefined parent type at ${node.name.value}`);
+            }
+            if (
+              parentType.kind !== 'OBJECT' &&
+              parentType.kind !== 'INTERFACE'
+            ) {
+              throw new Error(`Bad parent type ${parentType.kind} at ${parentType.name}.${node.name}`);
+            }
+
+            if (node.name.value === '__typename') {
+              stack.push(undefined);
+              return;
+            }
+
+            const parentTypeReport = report.types.find(it => it.name === parentType.name) as ObjectTypeReport;
+            if (!parentTypeReport) {
+              throw new Error(`Undefined parent type report ${parentType.name}`);
+            }
+
+            const field = parentType.fields.find(it => it.name === node.name.value);
+            if (!field) {
+              throw new Error(`Undefined field ${parentType.name}.${node.name.value}`);
+            }
+
+            const fieldReport = parentTypeReport.fields.find(it => it.name === field.name);
+            if (!fieldReport) {
+              throw new Error(`Undefined field report ${parentType.name}.${field.name}`);
+            }
+
+            fieldReport.count++;
+            parentTypeReport.coverage =
+              parentTypeReport.fields.filter(it => it.count > 0).length / parentType.fields.length;
+
+            let typeRef = field.type;
+            while (typeRef.kind === 'LIST' || typeRef.kind === 'NON_NULL') {
+              typeRef = typeRef.ofType;
+            }
+
+            const type = getIntrospectionType(introspection, typeRef.name);
+            if (!type) {
+              stack.push(undefined);
+              return;
+            }
+
+            const typeReport = report.types.find(it => it.name === type.name);
+            if (!typeReport) {
+              throw new Error(`Undefined type report ${type.name}`);
+            }
+
+            if (type.kind === 'ENUM' && typeReport.kind === 'ENUM') {
+              const values = getValuesAtPath(result.data, path);
+              values.forEach(it => {
+                typeReport.values.forEach(enumValueReport => {
+                  if (enumValueReport.name === it) {
+                    enumValueReport.count++;
+                  }
+                });
+              });
+              typeReport.coverage = typeReport.values
+                .filter(it => it.count > 0).length /
+                typeReport.values.length;
+            }
+
+            if (type.kind === 'SCALAR' && typeReport.kind === 'SCALAR') {
+              typeReport.count++;
+              typeReport.coverage = 1;
+            }
+
+            stack.push(type);
+          },
+          leave() {
+            stack.pop();
+            path.pop();
+          }
+        },
+        InlineFragment: {
+          enter(node) {
+            if (!node.typeCondition) {
+              throw new Error('Inline fragment without type condition?');
+            }
+
+            const type = getIntrospectionType(introspection, node.typeCondition.name.value) as IntrospectionObjectType;
+            if (!type || type.kind !== 'OBJECT') {
+              throw new Error(`Bad inline fragment ${ node.typeCondition.name.value}`);
+            }
+
+            stack.push(type);
+          },
+          leave() {
+            stack.pop();
+          }
+        }
+      });
     }
   });
-
-  if (report.errorMessages.size > 0) {
-    console.log(chalk.gray(`    All GraphQL error messages:`));
-    report.errorMessages.forEach((count, message) => {
-      console.log(chalk.gray(`        ${count}x ${message}`));
-    });
-  }
-
-  if (report.errorCodes.size > 0) {
-    console.log(`    All GraphQL error codes:`);
-    report.errorCodes.forEach((count, code) => {
-      console.log(chalk.gray(`        ${count}x ${code}`));
-    });
-  }
-
-  if (report.unexpectedErrorMessages.size > 0) {
-    console.log(`    Unexpected GraphQL error messages:`);
-    report.unexpectedErrorMessages.forEach((count, message) => {
-      console.log(chalk.red(`        ${count}x ${message}`));
-    });
-  }
-
-  if (report.unexpectedErrorCodes.size > 0) {
-    console.log(`    Unexpected GraphQL error codes:`);
-    report.unexpectedErrorCodes.forEach((count, code) => {
-      console.log(chalk.red(`        ${count}x ${code}`));
-    });
-  }
-
-  console.log(`    Response times:`);
-  console.log(`        avg: ${report.responseTimes.avg.toFixed(0)} ms`);
-  console.log(`        min: ${report.responseTimes.min.toFixed(0)} ms`);
-  console.log(`        max: ${report.responseTimes.max.toFixed(0)} ms`);
-
-  console.log('');
-  console.log(`Seed was ${report.options.seed}`);
-  console.log('');
 }
 
-export function printMemoryToConsole(memory: Memory) {
-  console.log('MEMORY');
-  console.log(JSON.stringify(memory.serialize(), null, 2));
-  console.log('');
+export function initReport(introspection: IntrospectionQuery): TestReport {
+  return {
+    results: [],
+    requestCount: 0,
+    failedCount: 0,
+    statusCodes: [],
+    errorCount: 0,
+    errorMessages: [],
+    errorCodes: [],
+    unexpectedErrorCount: 0,
+    unexpectedErrorMessages: [],
+    unexpectedErrorCodes: [],
+    requestErrorCount: 0,
+    responseTimes: {
+      avg: 0,
+      min: 999999,
+      max: 0,
+      total: 0
+    },
+    types: introspection.__schema.types
+      .filter(it => !it.name.match(/^__/))
+      .map(initTypeReport),
+    coverage: 0
+  };
 }
 
-export function indent(text: string, size: number) {
-  let spaces = '';
-
-  while (size > 0) {
-    spaces += ' ';
-    --size;
+function initTypeReport(type: IntrospectionType): TypeReport {
+  switch (type.kind) {
+    case 'OBJECT':
+      return {
+        name: type.name,
+        kind: type.kind,
+        coverage: 0,
+        fields: type.fields.map(initFieldReport)
+      };
+    case 'INTERFACE':
+      return {
+        name: type.name,
+        kind: type.kind,
+        coverage: 0,
+        fields: type.fields.map(initFieldReport)
+      };
+    case 'ENUM':
+      return {
+        name: type.name,
+        kind: type.kind,
+        coverage: 0,
+        values: type.enumValues.map(initEnumValueReport)
+      };
+    case 'SCALAR':
+      return {
+        name: type.name,
+        kind: type.kind,
+        coverage: 0,
+        count: 0
+      };
+    case 'INPUT_OBJECT':
+      return {
+        name: type.name,
+        kind: type.kind,
+        coverage: 0
+      };
+    case 'UNION':
+      return {
+        name: type.name,
+        kind: type.kind,
+        coverage: 0
+      };
   }
+}
 
-  return text
-    .split(/\n/g)
-    .map(it => spaces + it)
-    .join('\n');
+function initFieldReport(field: IntrospectionField): FieldReport {
+  return {
+    name: field.name,
+    count: 0,
+    expectedErrors: [],
+    unexpectedErrors: []
+  };
+}
+
+function initEnumValueReport(
+  enumValue: IntrospectionEnumValue
+): EnumValueReport {
+  return {
+    name: enumValue.name,
+    count: 0
+  };
+}
+
+function getValuesAtPath(data: any, path: string[]): any[] {
+  if (Array.isArray(data)) {
+    return data
+      .map(it => getValuesAtPath(it, path))
+      .reduce((a, it) => a.concat(it), []);
+  } else if (path.length === 0) {
+    return [data];
+  } else if (data) {
+    return getValuesAtPath(data[path[0]], path.slice(1));
+  } else {
+    return [];
+  }
 }
