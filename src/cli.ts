@@ -6,6 +6,7 @@ import { ConsoleReporter } from './console';
 import { firstOf, asArray } from './util';
 import { Session } from './session';
 import { buildReport } from './report';
+import { introspect, IntrospectionHelper } from './introspection';
 
 const { version } = require('../package.json');
 
@@ -87,6 +88,7 @@ export async function cli(argv: string[]): Promise<number> {
   }
 
   const reporter = new ConsoleReporter();
+
   const originalResultCallback = optionsFromFile.resultCallback;
   const options = makeOptions({
     ...optionsWithCliArgs(optionsFromFile, args),
@@ -101,12 +103,15 @@ export async function cli(argv: string[]): Promise<number> {
     }
   });
 
-  const session = new Session(options);
+  const introspection = await introspect(options.url, options.requestOptions);
+  const session = new Session(options, introspection);
 
-  await session.init();
   await session.run();
 
-  const report = buildReport(session.getResults(), session.getIntrospection());
+  const report = buildReport(
+    session.getResults(),
+    new IntrospectionHelper(introspection)
+  );
 
   if (args.print.memory) {
     reporter.printMemory(session.memory);

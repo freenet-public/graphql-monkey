@@ -4,21 +4,15 @@ import {
   getIntrospectionQuery,
   IntrospectionNamedTypeRef,
   IntrospectionTypeRef,
-  IntrospectionField,
   IntrospectionQuery,
   IntrospectionObjectType,
   IntrospectionInterfaceType
 } from 'graphql';
 
-export type Path = string[];
-
-export interface Endpoint {
-  field: IntrospectionField;
-  parent?: Endpoint;
-  on?: string;
-}
-
-export async function introspect(url: string, requestOptions?: Options) {
+export async function introspect(
+  url: string,
+  requestOptions?: Options
+): Promise<IntrospectionQuery> {
   const body = await request({
     ...requestOptions,
     url,
@@ -41,7 +35,7 @@ export async function introspect(url: string, requestOptions?: Options) {
     throw new Error('Introspection failed; no data');
   }
 
-  return new IntrospectionHelper(body.data);
+  return body.data;
 }
 
 export class IntrospectionHelper {
@@ -76,6 +70,26 @@ export class IntrospectionHelper {
 
     if (type.kind !== 'OBJECT') {
       throw new Error(`${name} type is not of kind OBJECT`);
+    }
+
+    return type;
+  }
+
+  public requireInputObjectType(name: string) {
+    const type = this.requireType(name);
+
+    if (type.kind !== 'INPUT_OBJECT') {
+      throw new Error(`${name} type is not of kind INPUT_OBJECT`);
+    }
+
+    return type;
+  }
+
+  public requireEnumType(name: string) {
+    const type = this.requireType(name);
+
+    if (type.kind !== 'ENUM') {
+      throw new Error(`${name} type is not of kind ENUM`);
     }
 
     return type;

@@ -8,4 +8,3 @@ export * from './options';
 export * from './report';
 export * from './result';
 export * from './session';
-export * from './util';

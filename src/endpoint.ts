@@ -20,45 +20,24 @@ export class TestEndpoint {
   }
 
   public expand(introspection: IntrospectionHelper): TestEndpoint[] {
-    const typeRef = this.field.type;
-    const namedTypeRef = introspection.getNamedTypeRef(typeRef);
+    const type = introspection.requireTypeFromRef(this.field.type);
 
-    if (namedTypeRef.kind === 'OBJECT') {
-      const type = introspection.requireType(namedTypeRef.name);
-
-      if (type.kind !== 'OBJECT') {
-        throw new Error(
-          `OBJECT ref ${namedTypeRef.name} points to ${type.kind}`
-        );
-      }
-
+    if (type.kind === 'OBJECT') {
       return type.fields
         .filter(it => !isSimpleField(it))
         .map(field => new TestEndpoint(field, this));
     }
 
-    if (namedTypeRef.kind === 'INTERFACE' || namedTypeRef.kind === 'UNION') {
-      const type = introspection.requireType(namedTypeRef.name);
-
-      if (type.kind !== 'INTERFACE' && type.kind !== 'UNION') {
-        throw new Error(
-          `INTERFACE/UNION type ref ${namedTypeRef.name} points to ${type.kind}`
-        );
-      }
-
+    if (type.kind === 'INTERFACE' || type.kind === 'UNION') {
       return type.possibleTypes
         .map(possibleTypeRef => {
-          const namedPossibleTypeRef = introspection.getNamedTypeRef(
+          const possibleType = introspection.requireTypeFromRef(
             possibleTypeRef
           );
 
-          if (namedPossibleTypeRef.kind !== 'OBJECT') {
+          if (possibleType.kind !== 'OBJECT') {
             return [];
           }
-
-          const possibleType = introspection.requireObjectType(
-            namedPossibleTypeRef.name
-          );
 
           return possibleType.fields
             .filter(it => !isSimpleField(it))

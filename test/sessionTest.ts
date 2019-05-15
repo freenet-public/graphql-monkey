@@ -1,19 +1,16 @@
 import * as assert from 'assert';
-import { Session } from '../src/session';
-import { gqlm as testOptions } from './options';
 import { print } from 'graphql';
 import { TestEndpoint } from '../src/endpoint';
+import { createTestSession } from './testUtil';
 
 describe('From the core module', () => {
   describe('the Session class', () => {
     const options = {
-      ...testOptions(),
       data: {}
     };
 
     it('should be able to expand endpoints', async () => {
-      const session = new Session(options);
-      await session.init();
+      const session = await createTestSession(options);
 
       assert.equal(session.endpoints.length, 5);
 
@@ -40,8 +37,7 @@ describe('From the core module', () => {
     });
 
     it('should be able to generate queries for endpoints', async () => {
-      const session = new Session(options);
-      await session.init();
+      const session = await createTestSession(options);
 
       const endpoint = session.endpoints.find(
         it => it.field.name === 'customer'
@@ -91,8 +87,7 @@ describe('From the core module', () => {
     });
 
     it('should be able to generate queries for deep endpoints', async () => {
-      const session = new Session(options);
-      await session.init();
+      const session = await createTestSession(options);
 
       session.expand(session.endpoints[0]);
       session.expand(session.endpoints[1]);
@@ -118,19 +113,18 @@ describe('From the core module', () => {
       );
     });
 
-    it('should be able to determine if an endpoint can be guessed', async () => {
-      const session = new Session(options);
-      await session.init();
+    it('should be able to determine if a field can be guessed', async () => {
+      const session = await createTestSession(options);
 
       const endpoint = session.endpoints.find(
         it => it.field.name === 'login'
       ) as TestEndpoint;
 
-      assert.equal(session.canGuessEndpoint(endpoint), false);
+      assert.equal(session.canGuessField(endpoint.field), false);
 
       session.memory.write([], { username: 'siegmeyer', password: 'catarina' });
 
-      assert.equal(session.canGuessEndpoint(endpoint), true);
+      assert.equal(session.canGuessField(endpoint.field), true);
     });
   });
 });

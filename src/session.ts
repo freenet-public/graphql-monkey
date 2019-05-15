@@ -1,5 +1,5 @@
 import {
-  IntrospectionType,
+  IntrospectionQuery,
   IntrospectionObjectType,
   IntrospectionField,
   IntrospectionInputValue,
@@ -14,11 +14,7 @@ import {
   IntrospectionInterfaceType,
   IntrospectionUnionType
 } from 'graphql';
-import {
-  getNamedTypeRef,
-  introspect,
-  IntrospectionHelper
-} from './introspection';
+import { IntrospectionHelper } from './introspection';
 import { Memory } from './memory';
 import { TestOptions } from './options';
 import {
@@ -50,15 +46,24 @@ export class Session {
   public readonly endpoints: TestEndpoint[] = [];
   public readonly expanded = new Set<TestEndpoint>();
   public readonly chance: Chance.Chance;
-  protected introspection?: IntrospectionHelper;
-  protected typeMap = new Map<string, IntrospectionType>();
+  protected introspection: IntrospectionHelper;
 
-  public constructor(options: TestOptions) {
+  public constructor(options: TestOptions, introspection: IntrospectionQuery) {
     this.options = options;
-
+    this.introspection = new IntrospectionHelper(introspection);
     this.memory = new Memory(options.aliases);
     this.memory.write([], options.data);
     this.chance = new Chance(options.seed);
+
+    const queryType = this.introspection.requireQueryType();
+
+    for (const field of queryType.fields) {
+      this.addEndpoint(new TestEndpoint(field));
+    }
+
+    if (this.endpoints.length === 0) {
+      throw new Error('No endpoints found; query root ignored or schema empty');
+    }
   }
 
   public getResults() {
@@ -68,10 +73,6 @@ export class Session {
   }
 
   public async run() {
-    if (this.endpoints.length === 0) {
-      throw new Error('No endpoints found; not initialized or schema empty');
-    }
-
     let count = 0;
 
     while (count < this.options.count) {
@@ -102,7 +103,7 @@ export class Session {
   public rank(endpoint: TestEndpoint) {
     let rank = 0;
 
-    rank += this.canGuessEndpoint(endpoint) ? 0 : 15;
+    rank += this.canGuessField(endpoint.field) ? 0 : 15;
     rank += endpoint.getSpecificErrors().length * 4;
     rank += endpoint.getSuccessfulResults().length * 2;
     rank += endpoint.getNonNullResults().length * 5;
@@ -175,7 +176,7 @@ export class Session {
   }
 
   public generateEndpointQuery(endpoint: TestEndpoint): DocumentNode {
-    const type = this.requireTypeFromRef(endpoint.field.type);
+    const type = this.introspection.requireTypeFromRef(endpoint.field.type);
 
     if (type.kind === 'INTERFACE' || type.kind === 'UNION') {
       return this.generatePathQuery(
@@ -198,7 +199,7 @@ export class Session {
     type: IntrospectionInterfaceType | IntrospectionUnionType
   ) {
     const possibleTypes = type.possibleTypes.map(it =>
-      this.requireTypeFromRef(it)
+      this.introspection.requireTypeFromRef(it)
     );
     const selections: SelectionNode[] = possibleTypes
       .map(possibleType => {
@@ -299,15 +300,11 @@ export class Session {
     typeRef: IntrospectionNamedTypeRef,
     nullable: boolean
   ) {
-    if (this.maybeNull(name, nullable)) {
+    if (this.maybeNull(nullable)) {
       return makeNullValueNode();
     }
 
-    const type = this.requireType(typeRef.name);
-
-    if (type.kind !== 'INPUT_OBJECT') {
-      throw new Error('Never happens');
-    }
+    const type = this.introspection.requireInputObjectType(typeRef.name);
 
     const fields = type.inputFields.map(inputField =>
       makeObjectFieldNode(
@@ -324,7 +321,7 @@ export class Session {
     typeRef: IntrospectionListTypeRef,
     nullable: boolean
   ) {
-    if (this.maybeNull(name, nullable)) {
+    if (this.maybeNull(nullable)) {
       return makeNullValueNode();
     }
 
@@ -343,15 +340,11 @@ export class Session {
     typeRef: IntrospectionNamedTypeRef,
     nullable: boolean
   ) {
-    if (this.maybeNull(name, nullable)) {
+    if (this.maybeNull(nullable)) {
       return makeNullValueNode();
     }
 
-    const type = this.requireType(typeRef.name);
-
-    if (type.kind !== 'ENUM') {
-      throw new Error('Never happens');
-    }
+    const type = this.introspection.requireEnumType(typeRef.name);
 
     const candidates = Array.from(type.enumValues);
 
@@ -363,11 +356,11 @@ export class Session {
     typeRef: IntrospectionNamedTypeRef,
     nullable: boolean
   ): ValueNode {
-    if (this.maybeNull(name, nullable)) {
+    if (this.maybeNull(nullable)) {
       return makeNullValueNode();
     }
 
-    const type = this.requireType(typeRef.name);
+    const type = this.introspection.requireType(typeRef.name);
 
     switch (type.name) {
       case 'Float':
@@ -445,7 +438,7 @@ export class Session {
     return makeIntValueNode(this.chance.pickone(candidates));
   }
 
-  public maybeNull(name: string, nullable: boolean) {
+  public maybeNull(nullable: boolean) {
     return nullable && this.chance.floating({ min: 0, max: 1 }) < 0.5;
   }
 
@@ -456,7 +449,7 @@ export class Session {
 
     this.expanded.add(endpoint);
 
-    endpoint.expand(this.getIntrospection()).forEach(e => this.addEndpoint(e));
+    endpoint.expand(this.introspection).forEach(e => this.addEndpoint(e));
   }
 
   public addEndpoint(endpoint: TestEndpoint) {
@@ -470,20 +463,6 @@ export class Session {
     } else {
       this.endpoints.push(endpoint);
     }
-  }
-
-  public canGuessEndpoint(endpoint: TestEndpoint) {
-    if (!this.canGuessField(endpoint.field)) {
-      return false;
-    }
-
-    // if any parent is not guessable,
-    // the endpoint is not guessable
-    if (endpoint.parent && !this.canGuessEndpoint(endpoint.parent)) {
-      return false;
-    }
-
-    return true;
   }
 
   public canGuessField(field: IntrospectionField): boolean {
@@ -503,8 +482,7 @@ export class Session {
       return true;
     }
 
-    const namedTypeRef = getNamedTypeRef(arg.type);
-    const type = this.requireType(namedTypeRef.name);
+    const type = this.introspection.requireTypeFromRef(arg.type);
 
     switch (type.kind) {
       case 'SCALAR':
@@ -526,60 +504,5 @@ export class Session {
       default:
         return false;
     }
-  }
-
-  public requireTypeFromRef(typeRef: IntrospectionTypeRef) {
-    return this.getIntrospection().requireTypeFromRef(typeRef);
-  }
-
-  public requireQueryType() {
-    return this.getIntrospection().requireQueryType();
-  }
-
-  public requireObjectType(name: string) {
-    return this.getIntrospection().requireObjectType(name);
-  }
-
-  public requireType(name: string) {
-    return this.getIntrospection().requireType(name);
-  }
-
-  public getTypeMap() {
-    if (!this.typeMap) {
-      throw new Error('Not initialized');
-    }
-
-    return this.typeMap;
-  }
-
-  public getIntrospection() {
-    if (!this.introspection) {
-      throw new Error('Not initialized');
-    }
-
-    return this.introspection;
-  }
-
-  public async init() {
-    this.introspection = await introspect(
-      this.options.url,
-      this.options.requestOptions
-    );
-
-    const queryType = this.requireQueryType();
-
-    const { endpointCallback } = this.options;
-
-    for (const field of queryType.fields) {
-      let e: TestEndpoint | null | undefined = new TestEndpoint(field);
-      if (endpointCallback) {
-        e = endpointCallback(e);
-      }
-      if (e) {
-        this.endpoints.push(e);
-      }
-    }
-
-    return this;
   }
 }
