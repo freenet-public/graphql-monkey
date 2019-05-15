@@ -1,9 +1,10 @@
 {
   "name": "graphql-monkey",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A test framework and CLI for running fully automated, randomized tests against any GraphQL API.",
   "keywords": [
     "graphql",
+    "test",
     "testing",
     "randomized"
   ],
