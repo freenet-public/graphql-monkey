@@ -47,12 +47,18 @@ export async function introspect(
   return body.data;
 }
 
-export function requireTypeFromRef(introspection: IntrospectionQuery, typeRef: IntrospectionTypeRef) {
+export function requireTypeFromRef(
+  introspection: IntrospectionQuery,
+  typeRef: IntrospectionTypeRef
+) {
   const namedTypeRef = getNamedTypeRef(typeRef);
   return requireType(introspection, namedTypeRef.name);
 }
 
-export function getTypeFromRef(introspection: IntrospectionQuery, typeRef: IntrospectionTypeRef) {
+export function getTypeFromRef(
+  introspection: IntrospectionQuery,
+  typeRef: IntrospectionTypeRef
+) {
   const namedTypeRef = getNamedTypeRef(typeRef);
   return getType(introspection, namedTypeRef.name);
 }
@@ -69,7 +75,10 @@ export function getNamedTypeRef(
   }
 }
 
-export function requireObjectType(introspection: IntrospectionQuery, name: string) {
+export function requireObjectType(
+  introspection: IntrospectionQuery,
+  name: string
+) {
   const type = requireType(introspection, name);
 
   if (type.kind !== 'OBJECT') {
@@ -93,7 +102,10 @@ export function getType(introspection: IntrospectionQuery, name: string) {
   return introspection.__schema.types.find(it => it.name === name);
 }
 
-export function requireField(type: IntrospectionObjectType | IntrospectionInterfaceType, name: string) {
+export function requireField(
+  type: IntrospectionObjectType | IntrospectionInterfaceType,
+  name: string
+) {
   const field = getField(type, name);
 
   if (!field) {
@@ -110,14 +122,21 @@ export function getField(
   return type.fields.find(it => it.name === name);
 }
 
-export function getOperationTypeName(introspection: IntrospectionQuery, operation: string) {
+export function getOperationTypeName(
+  introspection: IntrospectionQuery,
+  operation: string
+) {
   switch (operation) {
     case 'query':
       return introspection.__schema.queryType.name;
     case 'mutation':
-      return introspection.__schema.mutationType ? introspection.__schema.mutationType.name : undefined;
+      return introspection.__schema.mutationType
+        ? introspection.__schema.mutationType.name
+        : undefined;
     case 'subscription':
-      return introspection.__schema.subscriptionType ? introspection.__schema.subscriptionType.name : undefined;
+      return introspection.__schema.subscriptionType
+        ? introspection.__schema.subscriptionType.name
+        : undefined;
   }
 }
 

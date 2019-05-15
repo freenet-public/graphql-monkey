@@ -2,9 +2,7 @@
 import minimist from 'minimist';
 import { TestOptionsInput, makeOptions } from './options';
 import * as path from 'path';
-import {
-  ConsoleReporter
-} from './console';
+import { ConsoleReporter } from './console';
 import { firstOf, asArray } from './util';
 import { Session } from './session';
 import { buildReport } from './report';

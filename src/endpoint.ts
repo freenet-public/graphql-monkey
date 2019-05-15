@@ -2,7 +2,11 @@ import { IntrospectionField, IntrospectionQuery } from 'graphql';
 import { TestResult } from './result';
 import { GraphQLError } from 'graphql';
 import { dataIsDefinedAtPath, isSimpleField } from './util';
-import { getNamedTypeRef, requireType, requireObjectType } from './introspection';
+import {
+  getNamedTypeRef,
+  requireType,
+  requireObjectType
+} from './introspection';
 
 // an endpoint represents a non-trivial field in a graphql schema
 // non-trivial = has arguments or is an object field
@@ -27,41 +31,43 @@ export class TestEndpoint {
       const type = requireType(introspection, namedTypeRef.name);
 
       if (type.kind !== 'OBJECT') {
-        throw new Error(`OBJECT ref ${namedTypeRef.name} points to ${type.kind}`);
+        throw new Error(
+          `OBJECT ref ${namedTypeRef.name} points to ${type.kind}`
+        );
       }
 
       return type.fields
         .filter(it => !isSimpleField(it))
-        .map(field => new TestEndpoint(
-          field,
-          this
-        ));
+        .map(field => new TestEndpoint(field, this));
     }
 
     if (namedTypeRef.kind === 'INTERFACE' || namedTypeRef.kind === 'UNION') {
       const type = requireType(introspection, namedTypeRef.name);
 
       if (type.kind !== 'INTERFACE' && type.kind !== 'UNION') {
-        throw new Error(`INTERFACE/UNION type ref ${namedTypeRef.name} points to ${type.kind}`);
+        throw new Error(
+          `INTERFACE/UNION type ref ${namedTypeRef.name} points to ${type.kind}`
+        );
       }
 
-      return type.possibleTypes.map(possibleTypeRef => {
-        const namedPossibleTypeRef = getNamedTypeRef(possibleTypeRef);
+      return type.possibleTypes
+        .map(possibleTypeRef => {
+          const namedPossibleTypeRef = getNamedTypeRef(possibleTypeRef);
 
-        if (namedPossibleTypeRef.kind !== 'OBJECT') {
-          return [];
-        }
+          if (namedPossibleTypeRef.kind !== 'OBJECT') {
+            return [];
+          }
 
-        const possibleType = requireObjectType(introspection, namedPossibleTypeRef.name);
+          const possibleType = requireObjectType(
+            introspection,
+            namedPossibleTypeRef.name
+          );
 
-        return possibleType.fields
-          .filter(it => !isSimpleField(it))
-          .map(field => new TestEndpoint(
-            field,
-            this,
-            possibleType.name
-          ));
-      }).reduce((l, ll) => l.concat(ll), []);
+          return possibleType.fields
+            .filter(it => !isSimpleField(it))
+            .map(field => new TestEndpoint(field, this, possibleType.name));
+        })
+        .reduce((l, ll) => l.concat(ll), []);
     }
 
     return [];

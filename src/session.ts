@@ -18,7 +18,14 @@ import {
   IntrospectionInterfaceType,
   IntrospectionUnionType
 } from 'graphql';
-import { getNamedTypeRef, isLeafField, introspect, requireType, requireTypeFromRef, requireObjectType } from './introspection';
+import {
+  getNamedTypeRef,
+  isLeafField,
+  introspect,
+  requireType,
+  requireTypeFromRef,
+  requireObjectType
+} from './introspection';
 import { Memory } from './memory';
 import { TestOptions } from './options';
 import {
@@ -178,26 +185,38 @@ export class Session {
     const type = this.requireTypeFromRef(endpoint.field.type);
 
     if (type.kind === 'INTERFACE' || type.kind === 'UNION') {
-      return this.generatePathQuery(endpoint, this.generateUnionEndpointSelections(type));
+      return this.generatePathQuery(
+        endpoint,
+        this.generateUnionEndpointSelections(type)
+      );
     }
 
     if (type.kind === 'OBJECT') {
-      return this.generatePathQuery(endpoint, this.generateObjectEndpointSelections(type));
+      return this.generatePathQuery(
+        endpoint,
+        this.generateObjectEndpointSelections(type)
+      );
     }
 
     return this.generatePathQuery(endpoint, []);
   }
 
-  public generateUnionEndpointSelections(type: IntrospectionInterfaceType | IntrospectionUnionType) {
-    const possibleTypes = type.possibleTypes.map(it => this.requireTypeFromRef(it));
-    const selections: SelectionNode[] = possibleTypes.map(possibleType => {
-      if (possibleType.kind === 'OBJECT') {
-        return makeInlineFragmentNode(
-          possibleType.name,
-          this.generateObjectEndpointSelections(possibleType)
-        );
-      }
-    }).filter(it => !!it) as SelectionNode[];
+  public generateUnionEndpointSelections(
+    type: IntrospectionInterfaceType | IntrospectionUnionType
+  ) {
+    const possibleTypes = type.possibleTypes.map(it =>
+      this.requireTypeFromRef(it)
+    );
+    const selections: SelectionNode[] = possibleTypes
+      .map(possibleType => {
+        if (possibleType.kind === 'OBJECT') {
+          return makeInlineFragmentNode(
+            possibleType.name,
+            this.generateObjectEndpointSelections(possibleType)
+          );
+        }
+      })
+      .filter(it => !!it) as SelectionNode[];
 
     selections.push(makeFieldNode('__typename', [], []));
 
@@ -223,9 +242,12 @@ export class Session {
   ): DocumentNode {
     const args = this.generateArguments(endpoint);
     const fieldNode = makeFieldNode(endpoint.field.name, args, selections);
-    const pathSelections = endpoint.on ?
-      [makeFieldNode('__typename'), makeInlineFragmentNode(endpoint.on, [fieldNode])] :
-      [fieldNode];
+    const pathSelections = endpoint.on
+      ? [
+          makeFieldNode('__typename'),
+          makeInlineFragmentNode(endpoint.on, [fieldNode])
+        ]
+      : [fieldNode];
 
     if (endpoint.parent) {
       const nonNullResults = endpoint.parent.getNonNullResults();
@@ -233,7 +255,11 @@ export class Session {
       // try using a working, non-null endpoint query of the parent as base
       if (nonNullResults.length > 0) {
         const parentQueryAst = this.chance.pickone(nonNullResults).queryAst;
-        return rewriteSelections(parentQueryAst, endpoint.parent.getPath(), pathSelections) as DocumentNode;
+        return rewriteSelections(
+          parentQueryAst,
+          endpoint.parent.getPath(),
+          pathSelections
+        ) as DocumentNode;
       }
 
       return this.generatePathQuery(endpoint.parent, pathSelections);

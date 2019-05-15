@@ -11,7 +11,15 @@ import {
   IntrospectionInputObjectType,
   visit
 } from 'graphql';
-import { getType, getOperationTypeName, requireObjectType, requireField, requireType, getTypeFromRef, requireTypeFromRef } from './introspection';
+import {
+  getType,
+  getOperationTypeName,
+  requireObjectType,
+  requireField,
+  requireType,
+  getTypeFromRef,
+  requireTypeFromRef
+} from './introspection';
 
 export interface TestReport {
   results: TestResult[];
@@ -91,25 +99,26 @@ export interface InputObjectTypeReport {
 }
 
 export type ReportableIntrospectionType =
-  IntrospectionObjectType |
-  IntrospectionEnumType |
-  IntrospectionScalarType |
-  IntrospectionInputObjectType;
+  | IntrospectionObjectType
+  | IntrospectionEnumType
+  | IntrospectionScalarType
+  | IntrospectionInputObjectType;
 
 export function buildReport(
   results: TestResult[],
   introspection: IntrospectionQuery
 ) {
-  return results.reduce<TestReport>(
-    (report, it) => {
-      updateReport(report, it, introspection);
-      return report;
-    },
-    initReport(introspection)
-  );
+  return results.reduce<TestReport>((report, it) => {
+    updateReport(report, it, introspection);
+    return report;
+  }, initReport(introspection));
 }
 
-export function updateReport(report: TestReport, result: TestResult, introspection: IntrospectionQuery) {
+export function updateReport(
+  report: TestReport,
+  result: TestResult,
+  introspection: IntrospectionQuery
+) {
   report.results.push(result);
 
   ++report.requestCount;
@@ -122,15 +131,17 @@ export function updateReport(report: TestReport, result: TestResult, introspecti
     ++report.requestErrorCount;
   }
 
-  const statusCodeCount = report.statusCodes.find(it => it.key === result.statusCode);
+  const statusCodeCount = report.statusCodes.find(
+    it => it.key === result.statusCode
+  );
   if (statusCodeCount) {
-      ++statusCodeCount.count;
-    } else {
-      report.statusCodes.push({
-        key: result.statusCode,
-        count: 1
-      });
-    }
+    ++statusCodeCount.count;
+  } else {
+    report.statusCodes.push({
+      key: result.statusCode,
+      count: 1
+    });
+  }
 
   report.responseTimes.total += result.responseTime;
   report.responseTimes.avg = report.responseTimes.total / report.requestCount;
@@ -146,14 +157,17 @@ export function updateReport(report: TestReport, result: TestResult, introspecti
   updateErrorReports(report, result);
   updateTypeReports(report, result, introspection);
 
-  report.coverage = report.types.reduce((c, t) => c + t.coverage, 0) / report.types.length;
+  report.coverage =
+    report.types.reduce((c, t) => c + t.coverage, 0) / report.types.length;
 }
 
 export function updateErrorReports(report: TestReport, result: TestResult) {
   for (const error of result.errors) {
     ++report.errorCount;
 
-    const messageCount = report.errorMessages.find(it => it.key === error.message);
+    const messageCount = report.errorMessages.find(
+      it => it.key === error.message
+    );
     if (messageCount) {
       ++messageCount.count;
     } else {
@@ -181,7 +195,9 @@ export function updateErrorReports(report: TestReport, result: TestResult) {
   for (const error of result.unexpectedErrors) {
     ++report.unexpectedErrorCount;
 
-    const messageCount = report.unexpectedErrorMessages.find(it => it.key === error.message);
+    const messageCount = report.unexpectedErrorMessages.find(
+      it => it.key === error.message
+    );
     if (messageCount) {
       ++messageCount.count;
     } else {
@@ -207,10 +223,17 @@ export function updateErrorReports(report: TestReport, result: TestResult) {
   }
 }
 
-export function updateTypeReports(report: TestReport, result: TestResult, introspection: IntrospectionQuery) {
+export function updateTypeReports(
+  report: TestReport,
+  result: TestResult,
+  introspection: IntrospectionQuery
+) {
   visit(result.queryAst, {
     OperationDefinition(opNode) {
-      const operationTypeName = getOperationTypeName(introspection, opNode.operation);
+      const operationTypeName = getOperationTypeName(
+        introspection,
+        opNode.operation
+      );
 
       if (!operationTypeName) {
         throw new Error(`Bad operation ${opNode.operation}`);
@@ -224,33 +247,47 @@ export function updateTypeReports(report: TestReport, result: TestResult, intros
           enter(node) {
             path.push(node.name.value);
 
-            const parentType = stack.length === 0 ?
-              requireType(introspection, operationTypeName) :
-              stack[stack.length - 1];
+            const parentType =
+              stack.length === 0
+                ? requireType(introspection, operationTypeName)
+                : stack[stack.length - 1];
 
             if (node.name.value === '__typename') {
               stack.push({ kind: 'SCALAR', name: 'String' });
               return;
             }
 
-            if (
-              parentType.kind !== 'OBJECT'
-            ) {
-              throw new Error(`Unexpected parent kind ${parentType.kind} at ${parentType.name}.${node.name.value}`);
+            if (parentType.kind !== 'OBJECT') {
+              throw new Error(
+                `Unexpected parent kind ${parentType.kind} at ${
+                  parentType.name
+                }.${node.name.value}`
+              );
             }
 
             // update parent object type report and field report
-            const parentTypeReport = requireObjectTypeReport(report, parentType.name);
-            const fieldReport = requireFieldReport(parentTypeReport, node.name.value);
+            const parentTypeReport = requireObjectTypeReport(
+              report,
+              parentType.name
+            );
+            const fieldReport = requireFieldReport(
+              parentTypeReport,
+              node.name.value
+            );
 
             fieldReport.count++;
             parentTypeReport.coverage =
-              parentTypeReport.fields.filter(it => it.count > 0).length / parentType.fields.length;
+              parentTypeReport.fields.filter(it => it.count > 0).length /
+              parentType.fields.length;
 
             const field = requireField(parentType, node.name.value);
             const type = requireTypeFromRef(introspection, field.type);
 
-            if (type.kind === 'INTERFACE' || type.kind === 'UNION' || builtinScalars.has(type.name)) {
+            if (
+              type.kind === 'INTERFACE' ||
+              type.kind === 'UNION' ||
+              builtinScalars.has(type.name)
+            ) {
               stack.push(type);
               return;
             }
@@ -267,8 +304,8 @@ export function updateTypeReports(report: TestReport, result: TestResult, intros
                   }
                 });
               });
-              typeReport.coverage = typeReport.values
-                .filter(it => it.count > 0).length /
+              typeReport.coverage =
+                typeReport.values.filter(it => it.count > 0).length /
                 typeReport.values.length;
             }
 
@@ -290,7 +327,9 @@ export function updateTypeReports(report: TestReport, result: TestResult, intros
               throw new Error('Inline fragment without type condition?');
             }
 
-            stack.push(requireObjectType(introspection, node.typeCondition.name.value));
+            stack.push(
+              requireObjectType(introspection, node.typeCondition.name.value)
+            );
           },
           leave() {
             stack.pop();
@@ -353,7 +392,13 @@ export function initReport(introspection: IntrospectionQuery): TestReport {
     types: introspection.__schema.types
       .filter(it => !it.name.match(/^__/))
       .filter(it => !builtinScalars.has(it.name))
-      .filter(it => it.kind === 'OBJECT' || it.kind === 'SCALAR' || it.kind === 'ENUM' || it.kind === 'INPUT_OBJECT')
+      .filter(
+        it =>
+          it.kind === 'OBJECT' ||
+          it.kind === 'SCALAR' ||
+          it.kind === 'ENUM' ||
+          it.kind === 'INPUT_OBJECT'
+      )
       .map(it => it as ReportableIntrospectionType)
       .map(initTypeReport),
     coverage: 0
@@ -424,10 +469,4 @@ function getValuesAtPath(data: any, path: string[]): any[] {
   }
 }
 
-const builtinScalars = new Set([
-  'Int',
-  'Float',
-  'String',
-  'Boolean',
-  'ID'
-]);
+const builtinScalars = new Set(['Int', 'Float', 'String', 'Boolean', 'ID']);

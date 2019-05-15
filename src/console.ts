@@ -33,10 +33,12 @@ export class ConsoleReporter {
     this.printGray(`    ${report.errorCount} total GraphQL errors`);
 
     if (report.unexpectedErrorCount > 0) {
-      this.printRed(`    ${report.unexpectedErrorCount} unexpected GraphQL errors`);
+      this.printRed(
+        `    ${report.unexpectedErrorCount} unexpected GraphQL errors`
+      );
     } else {
       this.printGreen(
-          `    ${report.unexpectedErrorCount} unexpected GraphQL errors`
+        `    ${report.unexpectedErrorCount} unexpected GraphQL errors`
       );
     }
 
@@ -99,10 +101,7 @@ export class ConsoleReporter {
     this.print('');
   }
 
-  public printResult(
-    result: TestResult,
-    printConfig: PrintConfig
-  ) {
+  public printResult(result: TestResult, printConfig: PrintConfig) {
     if (result.failed) {
       if (printConfig.requests || printConfig.failures) {
         this.printYellow(format(result.query, { parser: 'graphql' }));
@@ -194,7 +193,9 @@ export class ConsoleReporter {
   }
 
   public printObjectTypeReport(report: ObjectTypeReport) {
-    this.print(`    type ${report.name} ${this.coverageString(report.coverage)} {`);
+    this.print(
+      `    type ${report.name} ${this.coverageString(report.coverage)} {`
+    );
     report.fields.forEach(it => this.printFieldReport(it));
     this.print('    }');
     this.print('');
@@ -205,7 +206,9 @@ export class ConsoleReporter {
   }
 
   public printEnumTypeReport(report: EnumTypeReport) {
-    this.print(`    enum ${report.name} ${this.coverageString(report.coverage)} {`);
+    this.print(
+      `    enum ${report.name} ${this.coverageString(report.coverage)} {`
+    );
     report.values.forEach(it => this.printEnumValueReport(it));
     this.print('    }');
     this.print('');

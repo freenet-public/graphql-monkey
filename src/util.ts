@@ -13,11 +13,17 @@ export function asArray<T>(x: T[] | T): T[] {
   return Array.isArray(x) ? x : [x];
 }
 
-export function dataIsDefinedAtPath(data: any, path: string[], typename?: string): boolean {
+export function dataIsDefinedAtPath(
+  data: any,
+  path: string[],
+  typename?: string
+): boolean {
   if (data === null || typeof data === 'undefined') {
     return false;
   } else if (Array.isArray(data)) {
-    return data.filter(it => dataIsDefinedAtPath(it, path, typename)).length > 0;
+    return (
+      data.filter(it => dataIsDefinedAtPath(it, path, typename)).length > 0
+    );
   } else if (path.length === 0) {
     if (data.__typename && typename && data.__typename !== typename) {
       return false;
@@ -34,7 +40,11 @@ export function isSimpleField(field: IntrospectionField) {
   return field.args.length === 0 && isLeafField(field);
 }
 
-export function rewriteSelections(op: ASTNode, path: string[], selections: SelectionNode[]): ASTNode {
+export function rewriteSelections(
+  op: ASTNode,
+  path: string[],
+  selections: SelectionNode[]
+): ASTNode {
   let index = 0;
 
   return visit(op, {

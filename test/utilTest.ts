@@ -20,9 +20,7 @@ describe('From the util module', () => {
         ['customers', 'contracts'],
         [
           makeFieldNode('foo'),
-          makeInlineFragmentNode('Bar', [
-            makeFieldNode('bar')
-          ])
+          makeInlineFragmentNode('Bar', [makeFieldNode('bar')])
         ]
       );
 
@@ -61,9 +59,7 @@ describe('From the util module', () => {
         ['customers', 'contracts'],
         [
           makeFieldNode('foo'),
-          makeInlineFragmentNode('Bar', [
-            makeFieldNode('bar')
-          ])
+          makeInlineFragmentNode('Bar', [makeFieldNode('bar')])
         ]
       );
 
