@@ -1,5 +1,4 @@
 import {
-  IntrospectionQuery,
   IntrospectionType,
   IntrospectionObjectType,
   IntrospectionField,
@@ -7,24 +6,18 @@ import {
   GraphQLError,
   DocumentNode,
   print,
-  FieldNode,
   ArgumentNode,
   ValueNode,
   IntrospectionTypeRef,
   IntrospectionNamedTypeRef,
   IntrospectionListTypeRef,
-  OperationDefinitionNode,
-  SelectionSetNode,
   IntrospectionInterfaceType,
   IntrospectionUnionType
 } from 'graphql';
 import {
   getNamedTypeRef,
-  isLeafField,
   introspect,
-  requireType,
-  requireTypeFromRef,
-  requireObjectType
+  IntrospectionHelper
 } from './introspection';
 import { Memory } from './memory';
 import { TestOptions } from './options';
@@ -57,7 +50,7 @@ export class Session {
   public readonly endpoints: TestEndpoint[] = [];
   public readonly expanded = new Set<TestEndpoint>();
   public readonly chance: Chance.Chance;
-  protected introspection?: IntrospectionQuery;
+  protected introspection?: IntrospectionHelper;
   protected typeMap = new Map<string, IntrospectionType>();
 
   public constructor(options: TestOptions) {
@@ -536,15 +529,19 @@ export class Session {
   }
 
   public requireTypeFromRef(typeRef: IntrospectionTypeRef) {
-    return requireTypeFromRef(this.getIntrospection(), typeRef);
+    return this.getIntrospection().requireTypeFromRef(typeRef);
+  }
+
+  public requireQueryType() {
+    return this.getIntrospection().requireQueryType();
   }
 
   public requireObjectType(name: string) {
-    return requireObjectType(this.getIntrospection(), name);
+    return this.getIntrospection().requireObjectType(name);
   }
 
   public requireType(name: string) {
-    return requireType(this.getIntrospection(), name);
+    return this.getIntrospection().requireType(name);
   }
 
   public getTypeMap() {
@@ -569,13 +566,7 @@ export class Session {
       this.options.requestOptions
     );
 
-    for (const type of this.introspection.__schema.types) {
-      this.typeMap.set(type.name, type);
-    }
-
-    const queryType = this.requireType(
-      this.introspection.__schema.queryType.name
-    ) as IntrospectionObjectType;
+    const queryType = this.requireQueryType();
 
     const { endpointCallback } = this.options;
 

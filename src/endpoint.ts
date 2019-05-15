@@ -1,12 +1,8 @@
-import { IntrospectionField, IntrospectionQuery } from 'graphql';
+import { IntrospectionField } from 'graphql';
 import { TestResult } from './result';
 import { GraphQLError } from 'graphql';
 import { dataIsDefinedAtPath, isSimpleField } from './util';
-import {
-  getNamedTypeRef,
-  requireType,
-  requireObjectType
-} from './introspection';
+import { IntrospectionHelper, getNamedTypeRef } from './introspection';
 
 // an endpoint represents a non-trivial field in a graphql schema
 // non-trivial = has arguments or is an object field
@@ -23,12 +19,12 @@ export class TestEndpoint {
     this.on = on;
   }
 
-  public expand(introspection: IntrospectionQuery): TestEndpoint[] {
+  public expand(introspection: IntrospectionHelper): TestEndpoint[] {
     const typeRef = this.field.type;
-    const namedTypeRef = getNamedTypeRef(typeRef);
+    const namedTypeRef = introspection.getNamedTypeRef(typeRef);
 
     if (namedTypeRef.kind === 'OBJECT') {
-      const type = requireType(introspection, namedTypeRef.name);
+      const type = introspection.requireType(namedTypeRef.name);
 
       if (type.kind !== 'OBJECT') {
         throw new Error(
@@ -42,7 +38,7 @@ export class TestEndpoint {
     }
 
     if (namedTypeRef.kind === 'INTERFACE' || namedTypeRef.kind === 'UNION') {
-      const type = requireType(introspection, namedTypeRef.name);
+      const type = introspection.requireType(namedTypeRef.name);
 
       if (type.kind !== 'INTERFACE' && type.kind !== 'UNION') {
         throw new Error(
@@ -52,14 +48,15 @@ export class TestEndpoint {
 
       return type.possibleTypes
         .map(possibleTypeRef => {
-          const namedPossibleTypeRef = getNamedTypeRef(possibleTypeRef);
+          const namedPossibleTypeRef = introspection.getNamedTypeRef(
+            possibleTypeRef
+          );
 
           if (namedPossibleTypeRef.kind !== 'OBJECT') {
             return [];
           }
 
-          const possibleType = requireObjectType(
-            introspection,
+          const possibleType = introspection.requireObjectType(
             namedPossibleTypeRef.name
           );
 

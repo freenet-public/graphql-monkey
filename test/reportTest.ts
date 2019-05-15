@@ -3,6 +3,7 @@ import { buildReport, TestReport } from '../src/report';
 import { gqlm as testOptions } from './options';
 import { Session } from '../src/session';
 import { writeFileSync } from 'fs';
+import { createHash } from 'crypto';
 
 describe('From the report module', () => {
   describe('the buildReport function', () => {
@@ -12,12 +13,24 @@ describe('From the report module', () => {
       const results = await session.run();
       const report = buildReport(results, session.getIntrospection());
 
-      writeFileSync('test/report.actual.json', JSON.stringify(report, null, 2));
+      const actual = JSON.stringify(ignoreResponseTimes(report), null, 2);
+      const expected = JSON.stringify(
+        ignoreResponseTimes(require('./report.expected.json')),
+        null,
+        2
+      );
 
-      /*assert.equal(
-        JSON.stringify(ignoreResponseTimes(report), null, 2),
-        JSON.stringify(ignoreResponseTimes(require('./report.json')), null, 2)
-      );*/
+      writeFileSync('test/report.actual.json', actual);
+
+      assert.equal(
+        createHash('sha256')
+          .update(actual)
+          .digest('hex'),
+        createHash('sha256')
+          .update(expected)
+          .digest('hex'),
+        'Report diff; compare test/report.actual.json with test/report.expected.json'
+      );
     });
 
     function ignoreResponseTimes(report: TestReport): TestReport {

@@ -1,5 +1,3 @@
-import { Chance } from 'chance';
-
 export function generateString(name: string, chance: Chance.Chance) {
   // case: postal
   if (name.match(/postalcode|postcode|zipcode|postal|plz|zip|postleitzahl/i)) {

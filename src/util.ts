@@ -1,5 +1,5 @@
 import { IntrospectionField, SelectionNode, visit, ASTNode } from 'graphql';
-import { isLeafField } from './introspection';
+import { getNamedTypeRef } from './introspection';
 
 export function firstOf<T>(x: T[] | T): T {
   return Array.isArray(x) ? x[0] : x;
@@ -71,4 +71,10 @@ export function rewriteSelections(
       }
     }
   });
+}
+
+export function isLeafField(field: IntrospectionField) {
+  const namedTypeRef = getNamedTypeRef(field.type);
+
+  return namedTypeRef.kind === 'SCALAR' || namedTypeRef.kind === 'ENUM';
 }

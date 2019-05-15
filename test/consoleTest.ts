@@ -1,4 +1,3 @@
-import * as assert from 'assert';
 import { ConsoleReporter } from '../src/console';
 import { buildReport } from '../src/report';
 import { gqlm as testOptions } from './options';

@@ -1,7 +1,6 @@
 import { TestResult } from './result';
 import {
   GraphQLError,
-  IntrospectionQuery,
   IntrospectionField,
   IntrospectionType,
   IntrospectionEnumValue,
@@ -11,15 +10,7 @@ import {
   IntrospectionInputObjectType,
   visit
 } from 'graphql';
-import {
-  getType,
-  getOperationTypeName,
-  requireObjectType,
-  requireField,
-  requireType,
-  getTypeFromRef,
-  requireTypeFromRef
-} from './introspection';
+import { IntrospectionHelper } from './introspection';
 
 export interface TestReport {
   results: TestResult[];
@@ -106,7 +97,7 @@ export type ReportableIntrospectionType =
 
 export function buildReport(
   results: TestResult[],
-  introspection: IntrospectionQuery
+  introspection: IntrospectionHelper
 ) {
   return results.reduce<TestReport>((report, it) => {
     updateReport(report, it, introspection);
@@ -117,7 +108,7 @@ export function buildReport(
 export function updateReport(
   report: TestReport,
   result: TestResult,
-  introspection: IntrospectionQuery
+  introspection: IntrospectionHelper
 ) {
   report.results.push(result);
 
@@ -226,12 +217,11 @@ export function updateErrorReports(report: TestReport, result: TestResult) {
 export function updateTypeReports(
   report: TestReport,
   result: TestResult,
-  introspection: IntrospectionQuery
+  introspection: IntrospectionHelper
 ) {
   visit(result.queryAst, {
     OperationDefinition(opNode) {
-      const operationTypeName = getOperationTypeName(
-        introspection,
+      const operationTypeName = introspection.getOperationTypeName(
         opNode.operation
       );
 
@@ -249,7 +239,7 @@ export function updateTypeReports(
 
             const parentType =
               stack.length === 0
-                ? requireType(introspection, operationTypeName)
+                ? introspection.requireType(operationTypeName)
                 : stack[stack.length - 1];
 
             if (node.name.value === '__typename') {
@@ -280,8 +270,11 @@ export function updateTypeReports(
               parentTypeReport.fields.filter(it => it.count > 0).length /
               parentType.fields.length;
 
-            const field = requireField(parentType, node.name.value);
-            const type = requireTypeFromRef(introspection, field.type);
+            const field = introspection.requireField(
+              parentType,
+              node.name.value
+            );
+            const type = introspection.requireTypeFromRef(field.type);
 
             if (
               type.kind === 'INTERFACE' ||
@@ -328,7 +321,7 @@ export function updateTypeReports(
             }
 
             stack.push(
-              requireObjectType(introspection, node.typeCondition.name.value)
+              introspection.requireObjectType(node.typeCondition.name.value)
             );
           },
           leave() {
@@ -370,7 +363,7 @@ export function requireFieldReport(report: ObjectTypeReport, name: string) {
   return t;
 }
 
-export function initReport(introspection: IntrospectionQuery): TestReport {
+export function initReport(introspection: IntrospectionHelper): TestReport {
   return {
     results: [],
     requestCount: 0,
@@ -389,7 +382,7 @@ export function initReport(introspection: IntrospectionQuery): TestReport {
       max: 0,
       total: 0
     },
-    types: introspection.__schema.types
+    types: introspection.data.__schema.types
       .filter(it => !it.name.match(/^__/))
       .filter(it => !builtinScalars.has(it.name))
       .filter(

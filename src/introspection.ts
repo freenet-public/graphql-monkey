@@ -18,10 +18,7 @@ export interface Endpoint {
   on?: string;
 }
 
-export async function introspect(
-  url: string,
-  requestOptions?: Options
-): Promise<IntrospectionQuery> {
+export async function introspect(url: string, requestOptions?: Options) {
   const body = await request({
     ...requestOptions,
     url,
@@ -44,23 +41,104 @@ export async function introspect(
     throw new Error('Introspection failed; no data');
   }
 
-  return body.data;
+  return new IntrospectionHelper(body.data);
 }
 
-export function requireTypeFromRef(
-  introspection: IntrospectionQuery,
-  typeRef: IntrospectionTypeRef
-) {
-  const namedTypeRef = getNamedTypeRef(typeRef);
-  return requireType(introspection, namedTypeRef.name);
-}
+export class IntrospectionHelper {
+  public readonly data: IntrospectionQuery;
 
-export function getTypeFromRef(
-  introspection: IntrospectionQuery,
-  typeRef: IntrospectionTypeRef
-) {
-  const namedTypeRef = getNamedTypeRef(typeRef);
-  return getType(introspection, namedTypeRef.name);
+  constructor(data: IntrospectionQuery) {
+    this.data = data;
+  }
+
+  public requireTypeFromRef(typeRef: IntrospectionTypeRef) {
+    const namedTypeRef = this.getNamedTypeRef(typeRef);
+    return this.requireType(namedTypeRef.name);
+  }
+
+  public getTypeFromRef(typeRef: IntrospectionTypeRef) {
+    const namedTypeRef = this.getNamedTypeRef(typeRef);
+    return this.getType(namedTypeRef.name);
+  }
+
+  public getNamedTypeRef(
+    typeRef: IntrospectionTypeRef
+  ): IntrospectionNamedTypeRef {
+    return getNamedTypeRef(typeRef);
+  }
+
+  public requireQueryType() {
+    return this.requireObjectType(this.requireOperationTypeName('query'));
+  }
+
+  public requireObjectType(name: string) {
+    const type = this.requireType(name);
+
+    if (type.kind !== 'OBJECT') {
+      throw new Error(`${name} type is not of kind OBJECT`);
+    }
+
+    return type;
+  }
+
+  public requireType(name: string) {
+    const type = this.getType(name);
+
+    if (!type) {
+      throw new Error(`Undefined type ${name}`);
+    }
+
+    return type;
+  }
+
+  public getType(name: string) {
+    return this.data.__schema.types.find(it => it.name === name);
+  }
+
+  public requireField(
+    type: IntrospectionObjectType | IntrospectionInterfaceType,
+    name: string
+  ) {
+    const field = this.getField(type, name);
+
+    if (!field) {
+      throw new Error(`Undefined field ${type.name}.${name}`);
+    }
+
+    return field;
+  }
+
+  public getField(
+    type: IntrospectionObjectType | IntrospectionInterfaceType,
+    name: string
+  ) {
+    return type.fields.find(it => it.name === name);
+  }
+
+  public requireOperationTypeName(operation: string) {
+    const t = this.getOperationTypeName(operation);
+
+    if (!t) {
+      throw new Error(`Undefined operation type for ${operation}`);
+    }
+
+    return t;
+  }
+
+  public getOperationTypeName(operation: string) {
+    switch (operation) {
+      case 'query':
+        return this.data.__schema.queryType.name;
+      case 'mutation':
+        return this.data.__schema.mutationType
+          ? this.data.__schema.mutationType.name
+          : undefined;
+      case 'subscription':
+        return this.data.__schema.subscriptionType
+          ? this.data.__schema.subscriptionType.name
+          : undefined;
+    }
+  }
 }
 
 export function getNamedTypeRef(
@@ -73,75 +151,4 @@ export function getNamedTypeRef(
     default:
       return typeRef;
   }
-}
-
-export function requireObjectType(
-  introspection: IntrospectionQuery,
-  name: string
-) {
-  const type = requireType(introspection, name);
-
-  if (type.kind !== 'OBJECT') {
-    throw new Error(`${name} type is not of kind OBJECT`);
-  }
-
-  return type;
-}
-
-export function requireType(introspection: IntrospectionQuery, name: string) {
-  const type = getType(introspection, name);
-
-  if (!type) {
-    throw new Error(`Undefined type ${name}`);
-  }
-
-  return type;
-}
-
-export function getType(introspection: IntrospectionQuery, name: string) {
-  return introspection.__schema.types.find(it => it.name === name);
-}
-
-export function requireField(
-  type: IntrospectionObjectType | IntrospectionInterfaceType,
-  name: string
-) {
-  const field = getField(type, name);
-
-  if (!field) {
-    throw new Error(`Undefined field ${type.name}.${name}`);
-  }
-
-  return field;
-}
-
-export function getField(
-  type: IntrospectionObjectType | IntrospectionInterfaceType,
-  name: string
-) {
-  return type.fields.find(it => it.name === name);
-}
-
-export function getOperationTypeName(
-  introspection: IntrospectionQuery,
-  operation: string
-) {
-  switch (operation) {
-    case 'query':
-      return introspection.__schema.queryType.name;
-    case 'mutation':
-      return introspection.__schema.mutationType
-        ? introspection.__schema.mutationType.name
-        : undefined;
-    case 'subscription':
-      return introspection.__schema.subscriptionType
-        ? introspection.__schema.subscriptionType.name
-        : undefined;
-  }
-}
-
-export function isLeafField(field: IntrospectionField) {
-  const namedTypeRef = getNamedTypeRef(field.type);
-
-  return namedTypeRef.kind === 'SCALAR' || namedTypeRef.kind === 'ENUM';
 }

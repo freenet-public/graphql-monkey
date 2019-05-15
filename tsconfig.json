@@ -16,7 +16,8 @@
     "resolveJsonModule": true,
     "pretty": true,
     "esModuleInterop": true,
-    "strict": true
+    "strict": true,
+    "noUnusedLocals": true
   },
   "typeAcquisition": {
     "enable": true
