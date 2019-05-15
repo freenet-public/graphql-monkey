@@ -12,9 +12,9 @@ import {
   ObjectFieldNode,
   FloatValueNode,
   BooleanValueNode,
-  SelectionNode,
-  SelectionSetNode
+  SelectionNode
 } from 'graphql';
+import { InlineFragmentNode } from 'graphql/language/ast';
 
 export function makeDocumentNode(
   selections: SelectionNode[] | ReadonlyArray<SelectionNode>
@@ -36,8 +36,8 @@ export function makeDocumentNode(
 
 export function makeFieldNode(
   name: string,
-  args: ArgumentNode[] | ReadonlyArray<ArgumentNode>,
-  selections: SelectionNode[] | ReadonlyArray<SelectionNode>
+  args: ArgumentNode[] | ReadonlyArray<ArgumentNode> = [],
+  selections: SelectionNode[] | ReadonlyArray<SelectionNode> = []
 ): FieldNode {
   return {
     kind: 'Field',
@@ -46,6 +46,26 @@ export function makeFieldNode(
       value: name
     },
     arguments: args,
+    selectionSet: {
+      kind: 'SelectionSet',
+      selections
+    }
+  };
+}
+
+export function makeInlineFragmentNode(
+  on: string,
+  selections: SelectionNode[] | ReadonlyArray<SelectionNode>
+): InlineFragmentNode {
+  return {
+    kind: 'InlineFragment',
+    typeCondition: {
+      kind: 'NamedType',
+      name: {
+        kind: 'Name',
+        value: on
+      }
+    },
     selectionSet: {
       kind: 'SelectionSet',
       selections

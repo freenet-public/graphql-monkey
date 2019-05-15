@@ -38,7 +38,7 @@ export function generateString(name: string, chance: Chance.Chance) {
 
   // case: firstname
   if (name.match(/firstname|forename/i)) {
-    return chance.first({ nationality: 'us' });
+    return chance.first({ nationality: 'en' });
   }
 
   // case: birthday
@@ -60,10 +60,6 @@ export function generateString(name: string, chance: Chance.Chance) {
 }
 
 export function generateInteger(name: string, chance: Chance.Chance) {
-  if (!name) {
-    throw new Error('Never happens');
-  }
-
   // case: limits for pagination
   if (name.match(/limit/i)) {
     return chance.integer({ min: 0, max: 20 });

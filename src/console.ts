@@ -10,7 +10,6 @@ import {
   TypeReport,
   ObjectTypeReport,
   FieldReport,
-  InterfaceTypeReport,
   EnumTypeReport,
   EnumValueReport,
   ScalarTypeReport
@@ -185,9 +184,6 @@ export class ConsoleReporter {
       case 'OBJECT':
         this.printObjectTypeReport(report);
         break;
-      case 'INTERFACE':
-        this.printInterfaceTypeReport(report);
-        break;
       case 'ENUM':
         this.printEnumTypeReport(report);
         break;
@@ -199,13 +195,6 @@ export class ConsoleReporter {
 
   public printObjectTypeReport(report: ObjectTypeReport) {
     this.print(`    type ${report.name} ${this.coverageString(report.coverage)} {`);
-    report.fields.forEach(it => this.printFieldReport(it));
-    this.print('    }');
-    this.print('');
-  }
-
-  public printInterfaceTypeReport(report: InterfaceTypeReport) {
-    this.print(`    interface ${report.name} ${this.coverageString(report.coverage)} {`);
     report.fields.forEach(it => this.printFieldReport(it));
     this.print('    }');
     this.print('');

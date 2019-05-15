@@ -14,9 +14,11 @@ import {
   IntrospectionNamedTypeRef,
   IntrospectionListTypeRef,
   OperationDefinitionNode,
-  SelectionSetNode
+  SelectionSetNode,
+  IntrospectionInterfaceType,
+  IntrospectionUnionType
 } from 'graphql';
-import { getNamedTypeRef, isLeafField, introspect } from './introspection';
+import { getNamedTypeRef, isLeafField, introspect, requireType, requireTypeFromRef, requireObjectType } from './introspection';
 import { Memory } from './memory';
 import { TestOptions } from './options';
 import {
@@ -31,14 +33,16 @@ import {
   makeFloatValueNode,
   makeBooleanValueNode,
   makeStringValueNode,
-  makeIntValueNode
+  makeIntValueNode,
+  makeInlineFragmentNode
 } from './ast';
 import Chance from 'chance';
 import { generateString, generateInteger } from './generate';
 import request from 'request-promise-native';
 import { TestEndpoint } from './endpoint';
 import { TestResult } from './result';
-import { dataIsDefinedAtPath } from './util';
+import { dataIsDefinedAtPath, isSimpleField, rewriteSelections } from './util';
+import { SelectionNode } from 'graphql/language/ast';
 
 export class Session {
   public readonly options: TestOptions;
@@ -117,6 +121,7 @@ export class Session {
       errorCallback,
       resultCallback
     } = this.options;
+
     const query = print(queryAst);
     const t = Date.now();
     let result: TestResult;
@@ -170,31 +175,57 @@ export class Session {
   }
 
   public generateEndpointQuery(endpoint: TestEndpoint): DocumentNode {
-    const namedTypeRef = getNamedTypeRef(endpoint.field.type);
-    const type = this.requireType(namedTypeRef.name);
+    const type = this.requireTypeFromRef(endpoint.field.type);
 
-    if (type.kind === 'OBJECT' || type.kind === 'INTERFACE') {
-      const selections = type.fields
-        .filter(isSimpleField)
-        .map(f => makeFieldNode(f.name, [], []));
-
-      if (selections.length === 0) {
-        // fall back to __typename if object endpoint has no trivial fields
-        selections.push(makeFieldNode('__typename', [], []));
-      }
-
-      return this.generatePathQuery(endpoint, selections);
-    } else {
-      return this.generatePathQuery(endpoint, []);
+    if (type.kind === 'INTERFACE' || type.kind === 'UNION') {
+      return this.generatePathQuery(endpoint, this.generateUnionEndpointSelections(type));
     }
+
+    if (type.kind === 'OBJECT') {
+      return this.generatePathQuery(endpoint, this.generateObjectEndpointSelections(type));
+    }
+
+    return this.generatePathQuery(endpoint, []);
+  }
+
+  public generateUnionEndpointSelections(type: IntrospectionInterfaceType | IntrospectionUnionType) {
+    const possibleTypes = type.possibleTypes.map(it => this.requireTypeFromRef(it));
+    const selections: SelectionNode[] = possibleTypes.map(possibleType => {
+      if (possibleType.kind === 'OBJECT') {
+        return makeInlineFragmentNode(
+          possibleType.name,
+          this.generateObjectEndpointSelections(possibleType)
+        );
+      }
+    }).filter(it => !!it) as SelectionNode[];
+
+    selections.push(makeFieldNode('__typename', [], []));
+
+    return selections;
+  }
+
+  public generateObjectEndpointSelections(type: IntrospectionObjectType) {
+    const selections = type.fields
+      .filter(isSimpleField)
+      .map(f => makeFieldNode(f.name, [], []));
+
+    if (selections.length === 0) {
+      // fall back to __typename if object has no simple fields
+      selections.push(makeFieldNode('__typename', [], []));
+    }
+
+    return selections;
   }
 
   public generatePathQuery(
     endpoint: TestEndpoint,
-    selections: FieldNode[]
+    selections: SelectionNode[]
   ): DocumentNode {
     const args = this.generateArguments(endpoint);
     const fieldNode = makeFieldNode(endpoint.field.name, args, selections);
+    const pathSelections = endpoint.on ?
+      [makeFieldNode('__typename'), makeInlineFragmentNode(endpoint.on, [fieldNode])] :
+      [fieldNode];
 
     if (endpoint.parent) {
       const nonNullResults = endpoint.parent.getNonNullResults();
@@ -202,20 +233,13 @@ export class Session {
       // try using a working, non-null endpoint query of the parent as base
       if (nonNullResults.length > 0) {
         const parentQueryAst = this.chance.pickone(nonNullResults).queryAst;
-        const definition = parentQueryAst
-          .definitions[0] as OperationDefinitionNode;
-        const replaced = replaceLeafsInSelectionSet(
-          definition.selectionSet,
-          fieldNode
-        );
-
-        return makeDocumentNode(replaced.selections);
+        return rewriteSelections(parentQueryAst, endpoint.parent.getPath(), pathSelections) as DocumentNode;
       }
 
-      return this.generatePathQuery(endpoint.parent, [fieldNode]);
+      return this.generatePathQuery(endpoint.parent, pathSelections);
     }
 
-    return makeDocumentNode([fieldNode]);
+    return makeDocumentNode(pathSelections);
   }
 
   public generateArguments(endpoint: TestEndpoint): ArgumentNode[] {
@@ -413,30 +437,19 @@ export class Session {
 
     this.expanded.add(endpoint);
 
-    const typeRef = endpoint.field.type;
-    const namedTypeRef = getNamedTypeRef(typeRef);
+    endpoint.expand(this.getIntrospection()).forEach(e => this.addEndpoint(e));
+  }
 
+  public addEndpoint(endpoint: TestEndpoint) {
     const { endpointCallback } = this.options;
 
-    if (namedTypeRef.kind === 'OBJECT' || namedTypeRef.kind === 'INTERFACE') {
-      const type = this.requireType(namedTypeRef.name);
-
-      if (type.kind === 'OBJECT' || type.kind === 'INTERFACE') {
-        type.fields.forEach(field => {
-          if (!isSimpleField(field)) {
-            let e: TestEndpoint | null | undefined = new TestEndpoint(
-              field,
-              endpoint
-            );
-            if (endpointCallback) {
-              e = endpointCallback(e);
-            }
-            if (e) {
-              this.endpoints.push(e);
-            }
-          }
-        });
+    if (endpointCallback) {
+      const e = endpointCallback(endpoint);
+      if (e) {
+        this.endpoints.push(e);
       }
+    } else {
+      this.endpoints.push(endpoint);
     }
   }
 
@@ -496,15 +509,16 @@ export class Session {
     }
   }
 
+  public requireTypeFromRef(typeRef: IntrospectionTypeRef) {
+    return requireTypeFromRef(this.getIntrospection(), typeRef);
+  }
+
+  public requireObjectType(name: string) {
+    return requireObjectType(this.getIntrospection(), name);
+  }
+
   public requireType(name: string) {
-    const typeMap = this.getTypeMap();
-    const type = typeMap.get(name);
-
-    if (!type) {
-      throw new Error(`Undefined type ${name}`);
-    }
-
-    return type;
+    return requireType(this.getIntrospection(), name);
   }
 
   public getTypeMap() {
@@ -551,45 +565,4 @@ export class Session {
 
     return this;
   }
-}
-
-export function isSimpleField(field: IntrospectionField) {
-  return field.args.length === 0 && isLeafField(field);
-}
-
-export function replaceLeafsInSelectionSet(
-  selectionSet: SelectionSetNode,
-  replacement: FieldNode
-): SelectionSetNode {
-  const selectedFieldNodes: FieldNode[] = selectionSet.selections.filter(
-    selectionNode => selectionNode.kind === 'Field'
-  ) as FieldNode[];
-  const leafNodes = selectedFieldNodes.filter(
-    fieldNode =>
-      !fieldNode.selectionSet || fieldNode.selectionSet.selections.length === 0
-  );
-
-  return {
-    kind: 'SelectionSet',
-    selections:
-      leafNodes.length > 0
-        ? [replacement]
-        : selectionSet.selections.map(selection => {
-            if (selection.kind !== 'Field') {
-              throw new Error(
-                'FragmentSpread/InlineFragment not supported in replaceEndpointInSelectionSet'
-              );
-            }
-            if (selection.selectionSet) {
-              return {
-                ...selection,
-                selectionSet: replaceLeafsInSelectionSet(
-                  selection.selectionSet,
-                  replacement
-                )
-              };
-            }
-            return selection;
-          })
-  };
 }

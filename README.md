@@ -1,6 +1,6 @@
 # GraphQL Monkey
 
-:monkey: A test framework for running fully automated, randomized tests
+:monkey: A test framework and CLI for running fully automated, randomized tests
 against any GraphQL API.
 
 
@@ -101,6 +101,7 @@ Possible values are:
 - `errors`: Print GraphQL errors
 - `failures`: Print requests and GraphQL errors for failed tests
 - `memory`: Print memory after all tests
+- `types`: Print a report for each type, including coverage
 
 For example, `gqlm example.ts -p failures -p memory` will print failures and
 the data in memory after all tests.

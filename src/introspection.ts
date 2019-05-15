@@ -12,6 +12,12 @@ import {
 
 export type Path = string[];
 
+export interface Endpoint {
+  field: IntrospectionField;
+  parent?: Endpoint;
+  on?: string;
+}
+
 export async function introspect(
   url: string,
   requestOptions?: Options
@@ -41,6 +47,16 @@ export async function introspect(
   return body.data;
 }
 
+export function requireTypeFromRef(introspection: IntrospectionQuery, typeRef: IntrospectionTypeRef) {
+  const namedTypeRef = getNamedTypeRef(typeRef);
+  return requireType(introspection, namedTypeRef.name);
+}
+
+export function getTypeFromRef(introspection: IntrospectionQuery, typeRef: IntrospectionTypeRef) {
+  const namedTypeRef = getNamedTypeRef(typeRef);
+  return getType(introspection, namedTypeRef.name);
+}
+
 export function getNamedTypeRef(
   typeRef: IntrospectionTypeRef
 ): IntrospectionNamedTypeRef {
@@ -53,24 +69,48 @@ export function getNamedTypeRef(
   }
 }
 
-export function isLeafField(field: IntrospectionField) {
-  const namedTypeRef = getNamedTypeRef(field.type);
+export function requireObjectType(introspection: IntrospectionQuery, name: string) {
+  const type = requireType(introspection, name);
 
-  return namedTypeRef.kind === 'SCALAR' || namedTypeRef.kind === 'ENUM';
+  if (type.kind !== 'OBJECT') {
+    throw new Error(`${name} type is not of kind OBJECT`);
+  }
+
+  return type;
 }
 
-export function getIntrospectionType(introspection: IntrospectionQuery, name: string) {
+export function requireType(introspection: IntrospectionQuery, name: string) {
+  const type = getType(introspection, name);
+
+  if (!type) {
+    throw new Error(`Undefined type ${name}`);
+  }
+
+  return type;
+}
+
+export function getType(introspection: IntrospectionQuery, name: string) {
   return introspection.__schema.types.find(it => it.name === name);
 }
 
-export function getIntrospectionField(
+export function requireField(type: IntrospectionObjectType | IntrospectionInterfaceType, name: string) {
+  const field = getField(type, name);
+
+  if (!field) {
+    throw new Error(`Undefined field ${type.name}.${name}`);
+  }
+
+  return field;
+}
+
+export function getField(
   type: IntrospectionObjectType | IntrospectionInterfaceType,
   name: string
 ) {
   return type.fields.find(it => it.name === name);
 }
 
-export function getIntrospectionOperationTypeName(introspection: IntrospectionQuery, operation: string) {
+export function getOperationTypeName(introspection: IntrospectionQuery, operation: string) {
   switch (operation) {
     case 'query':
       return introspection.__schema.queryType.name;
@@ -79,4 +119,10 @@ export function getIntrospectionOperationTypeName(introspection: IntrospectionQu
     case 'subscription':
       return introspection.__schema.subscriptionType ? introspection.__schema.subscriptionType.name : undefined;
   }
+}
+
+export function isLeafField(field: IntrospectionField) {
+  const namedTypeRef = getNamedTypeRef(field.type);
+
+  return namedTypeRef.kind === 'SCALAR' || namedTypeRef.kind === 'ENUM';
 }

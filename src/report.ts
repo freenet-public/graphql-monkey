@@ -6,9 +6,12 @@ import {
   IntrospectionType,
   IntrospectionEnumValue,
   IntrospectionObjectType,
+  IntrospectionEnumType,
+  IntrospectionScalarType,
+  IntrospectionInputObjectType,
   visit
 } from 'graphql';
-import { getIntrospectionType, getIntrospectionOperationTypeName } from './introspection';
+import { getType, getOperationTypeName, requireObjectType, requireField, requireType, getTypeFromRef, requireTypeFromRef } from './introspection';
 
 export interface TestReport {
   results: TestResult[];
@@ -44,22 +47,13 @@ export interface KeyCount {
 
 export type TypeReport =
   | ObjectTypeReport
-  | InterfaceTypeReport
   | EnumTypeReport
   | ScalarTypeReport
-  | InputObjectTypeReport
-  | UnionTypeReport;
+  | InputObjectTypeReport;
 
 export interface ObjectTypeReport {
   name: string;
   kind: 'OBJECT';
-  coverage: number;
-  fields: FieldReport[];
-}
-
-export interface InterfaceTypeReport {
-  name: string;
-  kind: 'INTERFACE';
   coverage: number;
   fields: FieldReport[];
 }
@@ -96,11 +90,11 @@ export interface InputObjectTypeReport {
   coverage: number;
 }
 
-export interface UnionTypeReport {
-  name: string;
-  kind: 'UNION';
-  coverage: number;
-}
+export type ReportableIntrospectionType =
+  IntrospectionObjectType |
+  IntrospectionEnumType |
+  IntrospectionScalarType |
+  IntrospectionInputObjectType;
 
 export function buildReport(
   results: TestResult[],
@@ -216,70 +210,53 @@ export function updateErrorReports(report: TestReport, result: TestResult) {
 export function updateTypeReports(report: TestReport, result: TestResult, introspection: IntrospectionQuery) {
   visit(result.queryAst, {
     OperationDefinition(opNode) {
-      const operationTypeName = getIntrospectionOperationTypeName(introspection, opNode.operation);
+      const operationTypeName = getOperationTypeName(introspection, opNode.operation);
 
       if (!operationTypeName) {
         throw new Error(`Bad operation ${opNode.operation}`);
       }
 
       const path: string[] = [];
-      const stack: Array<IntrospectionType | undefined> = [];
+      const stack: IntrospectionType[] = [];
 
       visit(opNode, {
         Field: {
           enter(node) {
             path.push(node.name.value);
 
-            const parentType = stack.length > 0 ? stack[stack.length - 1] : getIntrospectionType(introspection, operationTypeName);
-            if (!parentType) {
-              throw new Error(`Undefined parent type at ${node.name.value}`);
-            }
-            if (
-              parentType.kind !== 'OBJECT' &&
-              parentType.kind !== 'INTERFACE'
-            ) {
-              throw new Error(`Bad parent type ${parentType.kind} at ${parentType.name}.${node.name}`);
-            }
+            const parentType = stack.length === 0 ?
+              requireType(introspection, operationTypeName) :
+              stack[stack.length - 1];
 
             if (node.name.value === '__typename') {
-              stack.push(undefined);
+              stack.push({ kind: 'SCALAR', name: 'String' });
               return;
             }
 
-            const parentTypeReport = report.types.find(it => it.name === parentType.name) as ObjectTypeReport;
-            if (!parentTypeReport) {
-              throw new Error(`Undefined parent type report ${parentType.name}`);
+            if (
+              parentType.kind !== 'OBJECT'
+            ) {
+              throw new Error(`Unexpected parent kind ${parentType.kind} at ${parentType.name}.${node.name.value}`);
             }
 
-            const field = parentType.fields.find(it => it.name === node.name.value);
-            if (!field) {
-              throw new Error(`Undefined field ${parentType.name}.${node.name.value}`);
-            }
-
-            const fieldReport = parentTypeReport.fields.find(it => it.name === field.name);
-            if (!fieldReport) {
-              throw new Error(`Undefined field report ${parentType.name}.${field.name}`);
-            }
+            // update parent object type report and field report
+            const parentTypeReport = requireObjectTypeReport(report, parentType.name);
+            const fieldReport = requireFieldReport(parentTypeReport, node.name.value);
 
             fieldReport.count++;
             parentTypeReport.coverage =
               parentTypeReport.fields.filter(it => it.count > 0).length / parentType.fields.length;
 
-            let typeRef = field.type;
-            while (typeRef.kind === 'LIST' || typeRef.kind === 'NON_NULL') {
-              typeRef = typeRef.ofType;
-            }
+            const field = requireField(parentType, node.name.value);
+            const type = requireTypeFromRef(introspection, field.type);
 
-            const type = getIntrospectionType(introspection, typeRef.name);
-            if (!type) {
-              stack.push(undefined);
+            if (type.kind === 'INTERFACE' || type.kind === 'UNION' || builtinScalars.has(type.name)) {
+              stack.push(type);
               return;
             }
 
-            const typeReport = report.types.find(it => it.name === type.name);
-            if (!typeReport) {
-              throw new Error(`Undefined type report ${type.name}`);
-            }
+            // update field type report
+            const typeReport = requireTypeReport(report, type.name);
 
             if (type.kind === 'ENUM' && typeReport.kind === 'ENUM') {
               const values = getValuesAtPath(result.data, path);
@@ -313,12 +290,7 @@ export function updateTypeReports(report: TestReport, result: TestResult, intros
               throw new Error('Inline fragment without type condition?');
             }
 
-            const type = getIntrospectionType(introspection, node.typeCondition.name.value) as IntrospectionObjectType;
-            if (!type || type.kind !== 'OBJECT') {
-              throw new Error(`Bad inline fragment ${ node.typeCondition.name.value}`);
-            }
-
-            stack.push(type);
+            stack.push(requireObjectType(introspection, node.typeCondition.name.value));
           },
           leave() {
             stack.pop();
@@ -327,6 +299,36 @@ export function updateTypeReports(report: TestReport, result: TestResult, intros
       });
     }
   });
+}
+
+export function requireObjectTypeReport(report: TestReport, name: string) {
+  const t = requireTypeReport(report, name);
+
+  if (t.kind !== 'OBJECT') {
+    throw new Error(`Unexpected ${t.kind} type report for ${name}`);
+  }
+
+  return t;
+}
+
+export function requireTypeReport(report: TestReport, name: string) {
+  const t = report.types.find(it => it.name === name);
+
+  if (!t) {
+    throw new Error(`Missing type report for ${name}`);
+  }
+
+  return t;
+}
+
+export function requireFieldReport(report: ObjectTypeReport, name: string) {
+  const t = report.fields.find(it => it.name === name);
+
+  if (!t) {
+    throw new Error(`Undefined field report ${report.name}.${name}`);
+  }
+
+  return t;
 }
 
 export function initReport(introspection: IntrospectionQuery): TestReport {
@@ -350,21 +352,17 @@ export function initReport(introspection: IntrospectionQuery): TestReport {
     },
     types: introspection.__schema.types
       .filter(it => !it.name.match(/^__/))
+      .filter(it => !builtinScalars.has(it.name))
+      .filter(it => it.kind === 'OBJECT' || it.kind === 'SCALAR' || it.kind === 'ENUM' || it.kind === 'INPUT_OBJECT')
+      .map(it => it as ReportableIntrospectionType)
       .map(initTypeReport),
     coverage: 0
   };
 }
 
-function initTypeReport(type: IntrospectionType): TypeReport {
+function initTypeReport(type: ReportableIntrospectionType): TypeReport {
   switch (type.kind) {
     case 'OBJECT':
-      return {
-        name: type.name,
-        kind: type.kind,
-        coverage: 0,
-        fields: type.fields.map(initFieldReport)
-      };
-    case 'INTERFACE':
       return {
         name: type.name,
         kind: type.kind,
@@ -386,12 +384,6 @@ function initTypeReport(type: IntrospectionType): TypeReport {
         count: 0
       };
     case 'INPUT_OBJECT':
-      return {
-        name: type.name,
-        kind: type.kind,
-        coverage: 0
-      };
-    case 'UNION':
       return {
         name: type.name,
         kind: type.kind,
@@ -431,3 +423,11 @@ function getValuesAtPath(data: any, path: string[]): any[] {
     return [];
   }
 }
+
+const builtinScalars = new Set([
+  'Int',
+  'Float',
+  'String',
+  'Boolean',
+  'ID'
+]);

@@ -3,7 +3,7 @@ type Query {
   customers(limit: Int, offset: Int, q: String): [Customer!]
   customer(id: String!): Customer
   login(username: String!, password: String!): Boolean
-  #search(q: String!): [SearchResult!]
+  search(q: String!): [SearchResult!]
 }
 
 interface Customer {
@@ -37,6 +37,7 @@ type Company implements Customer {
 
 type Contract {
   id: String!
+  customer: Customer
 }
 
 type Person {
@@ -52,4 +53,4 @@ type Hidden {
   foo: Unused
 }
 
-#union SearchResult = Individual | Company | Contract | Person
+union SearchResult = Individual | Company | Contract | Person

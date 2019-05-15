@@ -1,9 +1,8 @@
 import * as assert from 'assert';
-import { Session, replaceLeafsInSelectionSet } from '../src/session';
+import { Session } from '../src/session';
 import { gqlm as testOptions } from './options';
-import { print, OperationDefinitionNode } from 'graphql';
+import { print } from 'graphql';
 import { TestEndpoint } from '../src/endpoint';
-import { makeFieldNode, makeDocumentNode } from '../src/ast';
 
 describe('From the core module', () => {
   describe('the Session class', () => {
@@ -16,7 +15,7 @@ describe('From the core module', () => {
       const session = new Session(options);
       await session.init();
 
-      assert.equal(session.endpoints.length, 4);
+      assert.equal(session.endpoints.length, 5);
 
       session.expand(session.endpoints[0]);
       session.expand(session.endpoints[1]);
@@ -28,8 +27,15 @@ describe('From the core module', () => {
         ['customers'],
         ['customer'],
         ['login'],
+        ['search'],
         ['customers', 'contracts'],
-        ['customer', 'contracts']
+        ['customers', 'person'],
+        ['customers', 'contracts'],
+        ['customers', 'employees'],
+        ['customer', 'contracts'],
+        ['customer', 'person'],
+        ['customer', 'contracts'],
+        ['customer', 'employees']
       ]);
     });
 
@@ -45,9 +51,18 @@ describe('From the core module', () => {
         print(session.generateEndpointQuery(endpoint)).trim(),
         `{
           customer(id: "8bkpFT9hVTJd9)c[fM") {
-            id
-            type
-            name
+            ... on Individual {
+              id
+              type
+              name
+            }
+            ... on Company {
+              id
+              type
+              name
+              form
+            }
+            __typename
           }
         }`.replace(/^ {8}/gm, '')
       );
@@ -58,15 +73,52 @@ describe('From the core module', () => {
         print(session.generateEndpointQuery(endpoint)).trim(),
         `{
           customer(id: "4") {
-            id
-            type
-            name
+            ... on Individual {
+              id
+              type
+              name
+            }
+            ... on Company {
+              id
+              type
+              name
+              form
+            }
+            __typename
           }
         }`.replace(/^ {8}/gm, '')
       );
     });
 
-    it('should be able determine if an endpoint can be guessed', async () => {
+    it('should be able to generate queries for deep endpoints', async () => {
+      const session = new Session(options);
+      await session.init();
+
+      session.expand(session.endpoints[0]);
+      session.expand(session.endpoints[1]);
+      session.expand(session.endpoints[2]);
+      session.expand(session.endpoints[2]);
+
+      const endpoint = session.endpoints.find(
+        it => it.field.name === 'contracts'
+      ) as TestEndpoint;
+
+      assert.equal(
+        print(session.generateEndpointQuery(endpoint)).trim(),
+        `{
+          customers {
+            __typename
+            ... on Individual {
+              contracts {
+                id
+              }
+            }
+          }
+        }`.replace(/^ {8}/gm, '')
+      );
+    });
+
+    it('should be able to determine if an endpoint can be guessed', async () => {
       const session = new Session(options);
       await session.init();
 
@@ -79,36 +131,6 @@ describe('From the core module', () => {
       session.memory.write([], { username: 'siegmeyer', password: 'catarina' });
 
       assert.equal(session.canGuessEndpoint(endpoint), true);
-    });
-  });
-
-  describe('the replaceEndpointInSelectionSet', () => {
-    it('should replace endpoints in selection sets', async () => {
-      const queryAst = makeDocumentNode([
-        makeFieldNode('customers', [], [makeFieldNode('contracts', [], [])])
-      ]);
-      const replacement = makeFieldNode(
-        'customers',
-        [],
-        [
-          makeFieldNode(
-            'foo',
-            [],
-            [makeFieldNode('bar', [], []), makeFieldNode('baz', [], [])]
-          )
-        ]
-      );
-
-      const definition = queryAst.definitions[0] as OperationDefinitionNode;
-      const selectionSet = replaceLeafsInSelectionSet(
-        definition.selectionSet,
-        replacement
-      );
-
-      assert.deepEqual(selectionSet, {
-        kind: 'SelectionSet',
-        selections: [makeFieldNode('customers', [], [replacement])]
-      });
     });
   });
 });
