@@ -176,7 +176,7 @@ export function updateErrorReports(report: TestReport, result: TestResult) {
         ++codeCount.count;
       } else {
         report.errorCodes.push({
-          key: error.message,
+          key: code,
           count: 1
         });
       }
@@ -206,7 +206,7 @@ export function updateErrorReports(report: TestReport, result: TestResult) {
         ++codeCount.count;
       } else {
         report.unexpectedErrorCodes.push({
-          key: error.message,
+          key: code,
           count: 1
         });
       }
