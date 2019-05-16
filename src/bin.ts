@@ -1,4 +1,11 @@
 #!/usr/bin/env node
-import { cli } from './cli';
+// tslint:disable:no-console
+import { cli, HELP } from './cli';
 
-cli(process.argv.slice(2)).then(exitCode => process.exit(exitCode));
+cli(process.argv.slice(2))
+  .then(exitCode => process.exit(exitCode))
+  .catch(err => {
+    console.error(err.stack);
+    console.log(HELP);
+    process.exit(1);
+  });

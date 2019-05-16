@@ -34,22 +34,22 @@ export interface PrintConfig {
 
 export const HELP = `
 graphql-monkey [options] [options file]
-  -n, --count           Set number of tests (default: 5)
-  -e, --exit            Exit on first error
-  -h, --help            Print help
-  -p, --print           Configure console output (default: requests, responses)
-                        Possible values:
-                          requests: Print requests
-                          responses: Print responses
-                          errors: Print errors
-                          failures: Print requests and errors for failed tests
-                          memory: Print memory
-                          types: Print a report for each GraphQL type (with coverage)
-  -r, --require         Require the given module
-  -s, --seed            Set randomization seed
-  -t, --timeout         Set timeout (ms) per request (default: 2000)
-      --url             Set GraphQL endpoint URL
-      --version         Print version
+  -n, --count     Set number of tests (default: 5)
+  -e, --exit      Exit on first error
+  -h, --help      Print help
+  -p, --print     Configure console output
+                  Possible values:
+                    requests: Print requests (default)
+                    responses: Print responses (default)
+                    errors: Print errors
+                    failures: Print requests and errors for failed tests
+                    memory: Print memory
+                    types: Print a report (coverage) for each GraphQL type
+  -r, --require   Require the given module
+  -s, --seed      Set randomization seed
+  -t, --timeout   Set timeout (ms) per request (default: 2000)
+      --url       Set GraphQL endpoint URL
+      --version   Print version
 `;
 
 export async function cli(argv: string[]): Promise<number> {
