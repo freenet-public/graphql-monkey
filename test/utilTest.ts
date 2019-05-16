@@ -1,8 +1,7 @@
 import * as assert from 'assert';
-import { rewriteSelections, dataIsDefinedAtPath } from '../src/util';
+import { rewriteSelections, getPossibleValuesAtPath } from '../src/util';
 import { makeFieldNode, makeInlineFragmentNode } from '../src/ast';
 import { parse, print } from 'graphql';
-import request from 'request-promise-native';
 
 describe('From the util module', () => {
   describe('rewriteSelection', () => {
@@ -88,36 +87,47 @@ describe('From the util module', () => {
     });
   });
 
-  describe('dataIsDefinedAtPath', () => {
-    it('should determine if data is defined at a given path', async () => {
-      const r = await request({
-        url: 'http://localhost:4000/graphql',
-        json: true,
-        body: {
-          query: `{
-            customer(id: "4") {
-              __typename
-              ... on Individual {
-                contracts {
-                  id
-                }
-              }
-              ... on Company {
-                contracts {
-                  id
-                }
-              }
-            }
-          }`
-        }
-      });
+  describe('getPossibleValuesAtPath', () => {
+    it('should list possible values at a path in JSON data', async () => {
+      const data = {
+        customers: [
+          {
+            __typename: 'Individual',
+            contracts: [{ id: '4' }]
+          },
+          {
+            __typename: 'Company',
+            form: 'lol',
+            contracts: [{ id: '5' }, { id: '6' }, { list: ['wut', null] }]
+          }
+        ]
+      };
 
-      assert.ok(dataIsDefinedAtPath(r.data, []));
-      assert.ok(dataIsDefinedAtPath(r.data, [], 'Any'));
-      assert.ok(!dataIsDefinedAtPath(r.data, ['foo']));
-      assert.ok(dataIsDefinedAtPath(r.data, ['customer']));
-      assert.ok(dataIsDefinedAtPath(r.data, ['customer'], 'Individual'));
-      assert.ok(!dataIsDefinedAtPath(r.data, ['customer'], 'Company'));
+      assert.deepEqual(getPossibleValuesAtPath(data, []), [data]);
+
+      assert.deepEqual(
+        getPossibleValuesAtPath(data, ['customers']),
+        data.customers
+      );
+
+      assert.deepEqual(
+        getPossibleValuesAtPath(data, ['customers', 'contracts']),
+        [{ id: '4' }, { id: '5' }, { id: '6' }, { list: ['wut', null] }]
+      );
+
+      assert.deepEqual(
+        getPossibleValuesAtPath(data, ['customers', 'contracts', 'id']),
+        ['4', '5', '6']
+      );
+
+      assert.deepEqual(getPossibleValuesAtPath(data, ['customers', 'form']), [
+        'lol'
+      ]);
+
+      assert.deepEqual(
+        getPossibleValuesAtPath(data, ['customers', 'contracts', 'list']),
+        ['wut']
+      );
     });
   });
 });

@@ -12,9 +12,9 @@ import {
   ObjectFieldNode,
   FloatValueNode,
   BooleanValueNode,
-  SelectionNode
+  SelectionNode,
+  InlineFragmentNode
 } from 'graphql';
-import { InlineFragmentNode } from 'graphql/language/ast';
 
 export function makeDocumentNode(
   selections: SelectionNode[] | ReadonlyArray<SelectionNode>

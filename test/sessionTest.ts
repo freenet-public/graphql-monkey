@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import { print } from 'graphql';
+import { print, parse } from 'graphql';
 import { TestEndpoint } from '../src/endpoint';
 import { createTestSession } from './testUtil';
 
@@ -9,33 +9,6 @@ describe('From the core module', () => {
       data: {}
     };
 
-    it('should be able to expand endpoints', async () => {
-      const session = await createTestSession(options);
-
-      assert.equal(session.endpoints.length, 5);
-
-      session.expand(session.endpoints[0]);
-      session.expand(session.endpoints[1]);
-      session.expand(session.endpoints[2]);
-      session.expand(session.endpoints[2]);
-
-      assert.deepEqual(session.endpoints.map(it => it.getPath()), [
-        ['hello'],
-        ['customers'],
-        ['customer'],
-        ['login'],
-        ['search'],
-        ['customers', 'contracts'],
-        ['customers', 'person'],
-        ['customers', 'contracts'],
-        ['customers', 'employees'],
-        ['customer', 'contracts'],
-        ['customer', 'person'],
-        ['customer', 'contracts'],
-        ['customer', 'employees']
-      ]);
-    });
-
     it('should be able to generate queries for endpoints', async () => {
       const session = await createTestSession(options);
 
@@ -44,9 +17,10 @@ describe('From the core module', () => {
       ) as TestEndpoint;
 
       assert.equal(
-        print(session.generateEndpointQuery(endpoint)).trim(),
-        `{
+        print(session.generateEndpointQuery(endpoint)),
+        print(parse(`{
           customer(id: "8bkpFT9hVTJd9)c[fM") {
+            __typename
             ... on Individual {
               id
               type
@@ -58,17 +32,17 @@ describe('From the core module', () => {
               name
               form
             }
-            __typename
           }
-        }`.replace(/^ {8}/gm, '')
+        }`))
       );
 
       session.memory.write(['id'], '4');
 
       assert.equal(
-        print(session.generateEndpointQuery(endpoint)).trim(),
-        `{
+        print(session.generateEndpointQuery(endpoint)),
+        print(parse(`{
           customer(id: "4") {
+            __typename
             ... on Individual {
               id
               type
@@ -80,36 +54,8 @@ describe('From the core module', () => {
               name
               form
             }
-            __typename
           }
-        }`.replace(/^ {8}/gm, '')
-      );
-    });
-
-    it('should be able to generate queries for deep endpoints', async () => {
-      const session = await createTestSession(options);
-
-      session.expand(session.endpoints[0]);
-      session.expand(session.endpoints[1]);
-      session.expand(session.endpoints[2]);
-      session.expand(session.endpoints[2]);
-
-      const endpoint = session.endpoints.find(
-        it => it.field.name === 'contracts'
-      ) as TestEndpoint;
-
-      assert.equal(
-        print(session.generateEndpointQuery(endpoint)).trim(),
-        `{
-          customers {
-            __typename
-            ... on Individual {
-              contracts {
-                id
-              }
-            }
-          }
-        }`.replace(/^ {8}/gm, '')
+        }`))
       );
     });
 

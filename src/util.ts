@@ -13,26 +13,28 @@ export function asArray<T>(x: T[] | T): T[] {
   return Array.isArray(x) ? x : [x];
 }
 
-export function dataIsDefinedAtPath(
-  data: any,
-  path: string[],
-  typename?: string
-): boolean {
+export function flat<T>(array: T[]) {
+  return array.reduce<T[]>((l, ll) => l.concat(ll), []);
+}
+
+export function flatMap<S, T>(
+  array: S[],
+  mapping: (item: S, index: number) => T
+) {
+  return flat(array.map(mapping));
+}
+
+export function getPossibleValuesAtPath(data: any, path: string[]): any[] {
   if (data === null || typeof data === 'undefined') {
-    return false;
+    return [];
   } else if (Array.isArray(data)) {
-    return (
-      data.filter(it => dataIsDefinedAtPath(it, path, typename)).length > 0
-    );
+    return flatMap(data, it => getPossibleValuesAtPath(it, path));
   } else if (path.length === 0) {
-    if (data.__typename && typename && data.__typename !== typename) {
-      return false;
-    }
-    return true;
-  } else if (typeof data === 'object') {
-    return dataIsDefinedAtPath(data[path[0]], path.slice(1), typename);
+    return [data];
+  }  else if (typeof data === 'object') {
+    return getPossibleValuesAtPath(data[path[0]], path.slice(1));
   } else {
-    return false;
+    return [];
   }
 }
 
@@ -40,11 +42,11 @@ export function isSimpleField(field: IntrospectionField) {
   return field.args.length === 0 && isLeafField(field);
 }
 
-export function rewriteSelections(
-  op: ASTNode,
+export function rewriteSelections<T extends ASTNode>(
+  op: T,
   path: string[],
   selections: SelectionNode[]
-): ASTNode {
+): T {
   let index = 0;
 
   return visit(op, {

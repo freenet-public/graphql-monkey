@@ -8,11 +8,13 @@ import {
   print,
   ArgumentNode,
   ValueNode,
+  SelectionNode,
   IntrospectionTypeRef,
   IntrospectionNamedTypeRef,
   IntrospectionListTypeRef,
   IntrospectionInterfaceType,
-  IntrospectionUnionType
+  IntrospectionUnionType,
+  IntrospectionType
 } from 'graphql';
 import { IntrospectionHelper } from './introspection';
 import { Memory } from './memory';
@@ -37,23 +39,22 @@ import { generateString, generateInteger } from './generate';
 import request from 'request-promise-native';
 import { TestEndpoint } from './endpoint';
 import { TestResult } from './result';
-import { dataIsDefinedAtPath, isSimpleField, rewriteSelections } from './util';
-import { SelectionNode } from 'graphql/language/ast';
+import { isSimpleField, rewriteSelections } from './util';
 
 export class Session {
   public readonly options: TestOptions;
+  public readonly chance: Chance.Chance;
   public readonly memory: Memory;
   public readonly endpoints: TestEndpoint[] = [];
   public readonly expanded = new Set<TestEndpoint>();
-  public readonly chance: Chance.Chance;
   protected introspection: IntrospectionHelper;
 
   public constructor(options: TestOptions, introspection: IntrospectionQuery) {
     this.options = options;
-    this.introspection = new IntrospectionHelper(introspection);
+    this.chance = new Chance(options.seed);
     this.memory = new Memory(options.aliases);
     this.memory.write([], options.data);
-    this.chance = new Chance(options.seed);
+    this.introspection = new IntrospectionHelper(introspection);
 
     const queryType = this.introspection.requireQueryType();
 
@@ -76,7 +77,8 @@ export class Session {
     let count = 0;
 
     while (count < this.options.count) {
-      this.endpoints.sort((a, b) => this.rank(a) - this.rank(b));
+      this.sortEndpoints();
+
       const top = this.endpoints.slice(0, 5);
       const endpoint = this.chance.pickone(top);
 
@@ -85,33 +87,20 @@ export class Session {
 
       ++count;
 
-      if (result) {
-        endpoint.results.push(result);
-        if (result.failed) {
-          if (this.options.exit) {
-            break;
-          }
-        } else if (dataIsDefinedAtPath(result.data, endpoint.getPath())) {
-          this.expand(endpoint);
-        }
+      if (!result) {
+        continue;
       }
+
+      endpoint.results.push(result);
+
+      if (this.options.exit && result.failed) {
+        break;
+      }
+
+      this.maybeExpand(endpoint);
     }
 
     return this.getResults();
-  }
-
-  public rank(endpoint: TestEndpoint) {
-    let rank = 0;
-
-    rank += this.canGuessField(endpoint.field) ? 0 : 15;
-    rank += endpoint.getSpecificErrors().length * 4;
-    rank += endpoint.getSuccessfulResults().length * 2;
-    rank += endpoint.getNonNullResults().length * 5;
-    rank += endpoint.getPath().length * 2;
-
-    // TODO use size of result responses?
-
-    return rank;
   }
 
   public async runQuery(queryAst: DocumentNode) {
@@ -175,24 +164,96 @@ export class Session {
     return resultCallback ? resultCallback(result) : result;
   }
 
+  public maybeExpand(endpoint: TestEndpoint) {
+    if (
+      !this.expanded.has(endpoint) &&
+      endpoint.getNonNullResults().length > 0
+    ) {
+      this.expand(endpoint);
+      return true;
+    }
+
+    return false;
+  }
+
+  public expand(endpoint: TestEndpoint) {
+    this.expanded.add(endpoint);
+
+    for (const e of endpoint.expand(this.introspection)) {
+      this.addEndpoint(e);
+    }
+  }
+
+  public addEndpoint(endpoint: TestEndpoint) {
+    const { endpointCallback } = this.options;
+    const e = endpointCallback ? endpointCallback(endpoint) : endpoint;
+
+    if (e) {
+      this.endpoints.push(e);
+    }
+  }
+
+  public sortEndpoints() {
+    this.endpoints.sort((a, b) => this.rank(a) - this.rank(b));
+  }
+
+  public rank(endpoint: TestEndpoint) {
+    let rank = 0;
+
+    rank += this.canGuessField(endpoint.field) ? 0 : 15;
+    rank += endpoint.getSpecificErrors().length * 4;
+    rank += endpoint.getSuccessfulResults().length * 2;
+    rank += endpoint.getNonNullResults().length * 5;
+    rank += endpoint.getPath().length * 2;
+
+    // TODO use size of result responses?
+
+    return rank;
+  }
+
   public generateEndpointQuery(endpoint: TestEndpoint): DocumentNode {
     const type = this.introspection.requireTypeFromRef(endpoint.field.type);
+    const selections = this.generateEndpointSelections(type);
+    const args = this.generateArguments(endpoint);
+    const fieldNode = makeFieldNode(endpoint.field.name, args, selections);
+    const pathSelections = endpoint.on
+      ? [
+          makeFieldNode('__typename'),
+          makeInlineFragmentNode(endpoint.on, [fieldNode])
+        ]
+      : [fieldNode];
 
-    if (type.kind === 'INTERFACE' || type.kind === 'UNION') {
-      return this.generatePathQuery(
-        endpoint,
-        this.generateUnionEndpointSelections(type)
+    if (endpoint.parent) {
+      const nonNullResults = endpoint.parent.getNonNullResults();
+
+      if (nonNullResults.length === 0) {
+        throw new Error(
+          'Trying to generate query without non-null parent results'
+        );
+      }
+
+      const parentQueryAst = this.chance.pickone(nonNullResults).queryAst;
+
+      return rewriteSelections(
+        parentQueryAst,
+        endpoint.parent.getPath(),
+        pathSelections
       );
     }
 
-    if (type.kind === 'OBJECT') {
-      return this.generatePathQuery(
-        endpoint,
-        this.generateObjectEndpointSelections(type)
-      );
-    }
+    return makeDocumentNode(pathSelections);
+  }
 
-    return this.generatePathQuery(endpoint, []);
+  public generateEndpointSelections(type: IntrospectionType): SelectionNode[] {
+    switch (type.kind) {
+      case 'INTERFACE':
+      case 'UNION':
+        return this.generateUnionEndpointSelections(type);
+      case 'OBJECT':
+        return this.generateObjectEndpointSelections(type);
+      default:
+        return [];
+    }
   }
 
   public generateUnionEndpointSelections(
@@ -212,7 +273,7 @@ export class Session {
       })
       .filter(it => !!it) as SelectionNode[];
 
-    selections.push(makeFieldNode('__typename', [], []));
+    selections.unshift(makeFieldNode('__typename'));
 
     return selections;
   }
@@ -220,46 +281,14 @@ export class Session {
   public generateObjectEndpointSelections(type: IntrospectionObjectType) {
     const selections = type.fields
       .filter(isSimpleField)
-      .map(f => makeFieldNode(f.name, [], []));
+      .map(f => makeFieldNode(f.name));
 
     if (selections.length === 0) {
       // fall back to __typename if object has no simple fields
-      selections.push(makeFieldNode('__typename', [], []));
+      selections.push(makeFieldNode('__typename'));
     }
 
     return selections;
-  }
-
-  public generatePathQuery(
-    endpoint: TestEndpoint,
-    selections: SelectionNode[]
-  ): DocumentNode {
-    const args = this.generateArguments(endpoint);
-    const fieldNode = makeFieldNode(endpoint.field.name, args, selections);
-    const pathSelections = endpoint.on
-      ? [
-          makeFieldNode('__typename'),
-          makeInlineFragmentNode(endpoint.on, [fieldNode])
-        ]
-      : [fieldNode];
-
-    if (endpoint.parent) {
-      const nonNullResults = endpoint.parent.getNonNullResults();
-
-      // try using a working, non-null endpoint query of the parent as base
-      if (nonNullResults.length > 0) {
-        const parentQueryAst = this.chance.pickone(nonNullResults).queryAst;
-        return rewriteSelections(
-          parentQueryAst,
-          endpoint.parent.getPath(),
-          pathSelections
-        ) as DocumentNode;
-      }
-
-      return this.generatePathQuery(endpoint.parent, pathSelections);
-    }
-
-    return makeDocumentNode(pathSelections);
   }
 
   public generateArguments(endpoint: TestEndpoint): ArgumentNode[] {
@@ -440,29 +469,6 @@ export class Session {
 
   public maybeNull(nullable: boolean) {
     return nullable && this.chance.floating({ min: 0, max: 1 }) < 0.5;
-  }
-
-  public expand(endpoint: TestEndpoint) {
-    if (this.expanded.has(endpoint)) {
-      return;
-    }
-
-    this.expanded.add(endpoint);
-
-    endpoint.expand(this.introspection).forEach(e => this.addEndpoint(e));
-  }
-
-  public addEndpoint(endpoint: TestEndpoint) {
-    const { endpointCallback } = this.options;
-
-    if (endpointCallback) {
-      const e = endpointCallback(endpoint);
-      if (e) {
-        this.endpoints.push(e);
-      }
-    } else {
-      this.endpoints.push(endpoint);
-    }
   }
 
   public canGuessField(field: IntrospectionField): boolean {

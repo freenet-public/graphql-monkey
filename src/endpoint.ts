@@ -1,8 +1,8 @@
 import { IntrospectionField } from 'graphql';
 import { TestResult } from './result';
 import { GraphQLError } from 'graphql';
-import { dataIsDefinedAtPath, isSimpleField } from './util';
-import { IntrospectionHelper, getNamedTypeRef } from './introspection';
+import { getPossibleValuesAtPath, isSimpleField } from './util';
+import { IntrospectionHelper } from './introspection';
 
 // an endpoint represents a non-trivial field in a graphql schema
 // non-trivial = has arguments or is an object field
@@ -77,11 +77,21 @@ export class TestEndpoint {
   }
 
   public getNonNullResults() {
-    const typeRef = this.field.type;
-    const namedTypeRef = getNamedTypeRef(typeRef);
     const path = this.getPath();
-    return this.results.filter(result =>
-      dataIsDefinedAtPath(result.data, path, this.on || namedTypeRef.name)
-    );
+
+    return this.results.filter(result => {
+      if (!this.on) {
+        return getPossibleValuesAtPath(result.data, path).length > 0;
+      }
+
+      const possibleParents = getPossibleValuesAtPath(
+        result.data,
+        path.slice(0, -1)
+      ).filter(value => value.__typename === this.on);
+
+      return (
+        getPossibleValuesAtPath(possibleParents, path.slice(-1)).length > 0
+      );
+    });
   }
 }
