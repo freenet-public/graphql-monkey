@@ -1,7 +1,6 @@
 import { IntrospectionField } from 'graphql';
 import { TestResult } from './result';
-import { GraphQLError } from 'graphql';
-import { getPossibleValuesAtPath, isSimpleField } from './util';
+import { getPossibleValuesAtPath, isSimpleField, flatMap } from './util';
 import { IntrospectionHelper } from './introspection';
 
 // an endpoint represents a non-trivial field in a graphql schema
@@ -19,31 +18,35 @@ export class TestEndpoint {
     this.on = on;
   }
 
+  public getId(): string {
+    const suffix = this.on ? `${this.field.name}<${this.on}>` : this.field.name;
+    return this.parent ? `${this.parent.getId()}.${suffix}` : suffix;
+  }
+
   public expand(introspection: IntrospectionHelper): TestEndpoint[] {
     const type = introspection.requireTypeFromRef(this.field.type);
 
-    if (type.kind === 'OBJECT') {
+    if (type.kind === 'OBJECT' && this.getNonNullResults().length > 0) {
       return type.fields
         .filter(it => !isSimpleField(it))
         .map(field => new TestEndpoint(field, this));
     }
 
     if (type.kind === 'INTERFACE' || type.kind === 'UNION') {
-      return type.possibleTypes
-        .map(possibleTypeRef => {
-          const possibleType = introspection.requireTypeFromRef(
-            possibleTypeRef
-          );
+      return flatMap(type.possibleTypes.slice(0), possibleTypeRef => {
+        const possibleType = introspection.requireTypeFromRef(possibleTypeRef);
 
-          if (possibleType.kind !== 'OBJECT') {
-            return [];
-          }
+        if (
+          possibleType.kind !== 'OBJECT' ||
+          this.getNonNullResultsOfType(possibleType.name).length === 0
+        ) {
+          return [] as TestEndpoint[];
+        }
 
-          return possibleType.fields
-            .filter(it => !isSimpleField(it))
-            .map(field => new TestEndpoint(field, this, possibleType.name));
-        })
-        .reduce((l, ll) => l.concat(ll), []);
+        return possibleType.fields
+          .filter(it => !isSimpleField(it))
+          .map(field => new TestEndpoint(field, this, possibleType.name));
+      });
     }
 
     return [];
@@ -53,10 +56,6 @@ export class TestEndpoint {
     return this.results.filter(result => !result.failed);
   }
 
-  public getRequiredArgs() {
-    return this.field.args.filter(arg => arg.type.kind === 'NON_NULL');
-  }
-
   public getPath(): string[] {
     return this.parent
       ? this.parent.getPath().concat([this.field.name])
@@ -64,16 +63,24 @@ export class TestEndpoint {
   }
 
   public getErrors() {
-    return this.results.reduce<GraphQLError[]>(
-      (errors, result) => errors.concat(result.errors || []),
-      []
-    );
+    return flatMap(this.results, result => result.errors || []);
   }
 
   public getSpecificErrors() {
     return this.getErrors().filter(
       error => (error.path || []).join('.') === this.getPath().join('.')
     );
+  }
+
+  public getNonNullResultsOfType(typename: string) {
+    const path = this.getPath();
+    return this.getNonNullResults().filter(result => {
+      return (
+        getPossibleValuesAtPath(result.data, path.concat('__typename')).indexOf(
+          typename
+        ) >= 0
+      );
+    });
   }
 
   public getNonNullResults() {

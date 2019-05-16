@@ -9,8 +9,14 @@ describe('From the report module', () => {
     it('should build a report', async () => {
       const session = await createTestSession();
       const introspection = await createIntrospectionHelper();
-      const results = await session.run();
+      const results = await session.run(session.options.count);
       const report = buildReport(results, introspection);
+
+      /*console.log(session.endpoints.sort((a, b) => {
+        return session.rank(a) - session.rank(b);
+      }).map(it => {
+        return { id: it.getId(), rank: session.rank(it) };
+      }));*/
 
       const actual = JSON.stringify(ignoreResponseTimes(report), null, 2);
       const expected = JSON.stringify(

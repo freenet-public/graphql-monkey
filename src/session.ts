@@ -39,14 +39,13 @@ import { generateString, generateInteger } from './generate';
 import request from 'request-promise-native';
 import { TestEndpoint } from './endpoint';
 import { TestResult } from './result';
-import { isSimpleField, rewriteSelections } from './util';
+import { isSimpleField, rewriteSelections, flatMap } from './util';
 
 export class Session {
   public readonly options: TestOptions;
   public readonly chance: Chance.Chance;
   public readonly memory: Memory;
   public readonly endpoints: TestEndpoint[] = [];
-  public readonly expanded = new Set<TestEndpoint>();
   protected introspection: IntrospectionHelper;
 
   public constructor(options: TestOptions, introspection: IntrospectionQuery) {
@@ -68,24 +67,18 @@ export class Session {
   }
 
   public getResults() {
-    return this.endpoints.reduce<TestResult[]>((results, endpoint) => {
-      return results.concat(endpoint.results);
-    }, []);
+    return flatMap(this.endpoints, endpoint => endpoint.results);
   }
 
-  public async run() {
-    let count = 0;
-
-    while (count < this.options.count) {
-      this.sortEndpoints();
-
-      const top = this.endpoints.slice(0, 5);
-      const endpoint = this.chance.pickone(top);
+  public async run(count: number) {
+    for (let i = 0; i < count; ++i) {
+      const endpoint = this.chance.weighted(
+        this.endpoints,
+        this.endpoints.map(it => this.rank(it))
+      );
 
       const query = this.generateEndpointQuery(endpoint);
       const result = await this.runQuery(query);
-
-      ++count;
 
       if (!result) {
         continue;
@@ -97,7 +90,7 @@ export class Session {
         break;
       }
 
-      this.maybeExpand(endpoint);
+      this.expand(endpoint);
     }
 
     return this.getResults();
@@ -164,21 +157,7 @@ export class Session {
     return resultCallback ? resultCallback(result) : result;
   }
 
-  public maybeExpand(endpoint: TestEndpoint) {
-    if (
-      !this.expanded.has(endpoint) &&
-      endpoint.getNonNullResults().length > 0
-    ) {
-      this.expand(endpoint);
-      return true;
-    }
-
-    return false;
-  }
-
   public expand(endpoint: TestEndpoint) {
-    this.expanded.add(endpoint);
-
     for (const e of endpoint.expand(this.introspection)) {
       this.addEndpoint(e);
     }
@@ -188,28 +167,25 @@ export class Session {
     const { endpointCallback } = this.options;
     const e = endpointCallback ? endpointCallback(endpoint) : endpoint;
 
-    if (e) {
+    if (e && !this.endpoints.find(it => it.getId() === e.getId())) {
       this.endpoints.push(e);
     }
-  }
-
-  public sortEndpoints() {
-    this.endpoints.sort((a, b) => this.rank(a) - this.rank(b));
   }
 
   public rank(endpoint: TestEndpoint) {
     let rank = 0;
 
-    rank += this.canGuessField(endpoint.field) ? 0 : 15;
+    rank += this.canGuessField(endpoint.field) ? 0 : 12;
+    rank += endpoint.results.length * 4;
     rank += endpoint.getSpecificErrors().length * 4;
     rank += endpoint.getSuccessfulResults().length * 2;
-    rank += endpoint.getNonNullResults().length * 5;
-    rank += endpoint.getPath().length * 2;
+    rank += endpoint.getNonNullResults().length * 8;
+    rank += endpoint.getPath().length * 7;
 
-    // TODO use size of result responses?
-
-    return rank;
+    return 1 / rank;
   }
+
+  //
 
   public generateEndpointQuery(endpoint: TestEndpoint): DocumentNode {
     const type = this.introspection.requireTypeFromRef(endpoint.field.type);
@@ -224,7 +200,9 @@ export class Session {
       : [fieldNode];
 
     if (endpoint.parent) {
-      const nonNullResults = endpoint.parent.getNonNullResults();
+      const nonNullResults = endpoint.on
+        ? endpoint.parent.getNonNullResultsOfType(endpoint.on)
+        : endpoint.parent.getNonNullResults();
 
       if (nonNullResults.length === 0) {
         throw new Error(
@@ -470,6 +448,8 @@ export class Session {
   public maybeNull(nullable: boolean) {
     return nullable && this.chance.floating({ min: 0, max: 1 }) < 0.5;
   }
+
+  //
 
   public canGuessField(field: IntrospectionField): boolean {
     // if any argument is not guessable,

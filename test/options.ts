@@ -3,7 +3,7 @@ import { TestOptions } from '../src/options';
 export function gqlm(): TestOptions {
   return {
     url: 'http://localhost:4000/graphql',
-    count: 50,
+    count: 45,
     exit: false,
     aliases: [],
     seed: '4',

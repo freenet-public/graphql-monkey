@@ -106,7 +106,7 @@ export async function cli(argv: string[]): Promise<number> {
   const introspection = await introspect(options.url, options.requestOptions);
   const session = new Session(options, introspection);
 
-  await session.run();
+  await session.run(options.count);
 
   const report = buildReport(
     session.getResults(),

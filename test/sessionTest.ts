@@ -18,7 +18,8 @@ describe('From the core module', () => {
 
       assert.equal(
         print(session.generateEndpointQuery(endpoint)),
-        print(parse(`{
+        print(
+          parse(`{
           customer(id: "8bkpFT9hVTJd9)c[fM") {
             __typename
             ... on Individual {
@@ -33,14 +34,16 @@ describe('From the core module', () => {
               form
             }
           }
-        }`))
+        }`)
+        )
       );
 
       session.memory.write(['id'], '4');
 
       assert.equal(
         print(session.generateEndpointQuery(endpoint)),
-        print(parse(`{
+        print(
+          parse(`{
           customer(id: "4") {
             __typename
             ... on Individual {
@@ -55,7 +58,8 @@ describe('From the core module', () => {
               form
             }
           }
-        }`))
+        }`)
+        )
       );
     });
 

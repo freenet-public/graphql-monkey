@@ -13,13 +13,13 @@ export function asArray<T>(x: T[] | T): T[] {
   return Array.isArray(x) ? x : [x];
 }
 
-export function flat<T>(array: T[]) {
+export function flat<T>(array: T[][]) {
   return array.reduce<T[]>((l, ll) => l.concat(ll), []);
 }
 
 export function flatMap<S, T>(
   array: S[],
-  mapping: (item: S, index: number) => T
+  mapping: (item: S, index: number) => T[]
 ) {
   return flat(array.map(mapping));
 }
@@ -31,7 +31,7 @@ export function getPossibleValuesAtPath(data: any, path: string[]): any[] {
     return flatMap(data, it => getPossibleValuesAtPath(it, path));
   } else if (path.length === 0) {
     return [data];
-  }  else if (typeof data === 'object') {
+  } else if (typeof data === 'object') {
     return getPossibleValuesAtPath(data[path[0]], path.slice(1));
   } else {
     return [];

@@ -12,7 +12,7 @@ describe('From the console module', () => {
       const session = await createTestSession();
       const introspection = await createIntrospectionHelper();
       const options = getTestOptions();
-      const results = await session.run();
+      const results = await session.run(options.count);
       const report = buildReport(results, introspection);
       const reporter = new ConsoleReporter();
       reporter.printMemory(session.memory);

@@ -3,18 +3,42 @@ import { createIntrospectionHelper } from './testUtil';
 import { TestResult } from '../src/result';
 import * as assert from 'assert';
 
-describe('An Endpoint object', () => {
-  it('should be able to compute its non-null results', async () => {
+describe('Test Endpoints', async () => {
+  it('should have IDs and be able to compute their non-null results', async () => {
     const introspection = await createIntrospectionHelper();
     const queryType = introspection.requireQueryType();
     const customersField = introspection.requireField(queryType, 'customers');
     const customersEndpoint = new TestEndpoint(customersField);
     const individualType = introspection.requireObjectType('Individual');
-    const individualContractsField = introspection.requireField(individualType, 'contracts');
-    const individualContractsEndpoint = new TestEndpoint(individualContractsField, customersEndpoint, 'Individual');
+    const individualContractsField = introspection.requireField(
+      individualType,
+      'contracts'
+    );
+    const individualContractsEndpoint = new TestEndpoint(
+      individualContractsField,
+      customersEndpoint,
+      'Individual'
+    );
     const companyType = introspection.requireObjectType('Company');
-    const companyContractsField = introspection.requireField(companyType, 'contracts');
-    const companyContractsEndpoint = new TestEndpoint(companyContractsField, customersEndpoint, 'Company');
+    const companyContractsField = introspection.requireField(
+      companyType,
+      'contracts'
+    );
+    const companyContractsEndpoint = new TestEndpoint(
+      companyContractsField,
+      customersEndpoint,
+      'Company'
+    );
+
+    assert.equal(customersEndpoint.getId(), 'customers');
+    assert.equal(
+      individualContractsEndpoint.getId(),
+      'customers.contracts<Individual>'
+    );
+    assert.equal(
+      companyContractsEndpoint.getId(),
+      'customers.contracts<Company>'
+    );
 
     const resultBoth = {
       data: {
@@ -57,14 +81,32 @@ describe('An Endpoint object', () => {
 
     customersEndpoint.results.push(resultBoth, resultIndividual, resultCompany);
 
-    assert.deepEqual(customersEndpoint.getNonNullResults(), [resultBoth, resultIndividual, resultCompany]);
+    assert.deepEqual(customersEndpoint.getNonNullResults(), [
+      resultBoth,
+      resultIndividual,
+      resultCompany
+    ]);
 
-    individualContractsEndpoint.results.push(resultBoth, resultIndividual, resultCompany);
+    individualContractsEndpoint.results.push(
+      resultBoth,
+      resultIndividual,
+      resultCompany
+    );
 
-    assert.deepEqual(individualContractsEndpoint.getNonNullResults(), [resultBoth, resultIndividual]);
+    assert.deepEqual(individualContractsEndpoint.getNonNullResults(), [
+      resultBoth,
+      resultIndividual
+    ]);
 
-    companyContractsEndpoint.results.push(resultBoth, resultIndividual, resultCompany);
+    companyContractsEndpoint.results.push(
+      resultBoth,
+      resultIndividual,
+      resultCompany
+    );
 
-    assert.deepEqual(companyContractsEndpoint.getNonNullResults(), [resultBoth, resultCompany]);
+    assert.deepEqual(companyContractsEndpoint.getNonNullResults(), [
+      resultBoth,
+      resultCompany
+    ]);
   });
 });
