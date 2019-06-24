@@ -8,6 +8,7 @@ import {
   IntrospectionObjectType,
   IntrospectionInterfaceType
 } from 'graphql';
+import { version } from '../package.json';
 
 export async function introspect(
   url: string,
@@ -15,6 +16,10 @@ export async function introspect(
 ): Promise<IntrospectionQuery> {
   const body = await request({
     ...requestOptions,
+    headers: {
+      'User-Agent': `graphql-monkey/${version}`,
+      ...(requestOptions ? requestOptions.headers : undefined)
+    },
     url,
     body: {
       query: getIntrospectionQuery({ descriptions: false })

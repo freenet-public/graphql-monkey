@@ -3,6 +3,7 @@ import graphqlHTTP from 'express-graphql';
 import { Server } from 'http';
 import { readFileSync } from 'fs';
 import { makeExecutableSchema } from 'graphql-tools';
+import * as assert from 'assert';
 
 let app: Application;
 let server: Server;
@@ -143,6 +144,12 @@ before(done => {
   });
 
   app = express();
+
+  app.use((req, res, next) => {
+    const userAgent = req.header('User-Agent');
+    assert.ok(userAgent && userAgent.match(/^graphql-monkey\/\d.\d.\d$/));
+    next();
+  });
 
   app.use('/graphql', graphqlHTTP({ schema }));
 

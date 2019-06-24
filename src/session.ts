@@ -40,6 +40,7 @@ import request from 'request-promise-native';
 import { TestEndpoint } from './endpoint';
 import { TestResult } from './result';
 import { isSimpleField, rewriteSelections, flatMap } from './util';
+import { version } from '../package.json';
 
 export class Session {
   public readonly options: TestOptions;
@@ -112,6 +113,10 @@ export class Session {
     try {
       const response = await request({
         ...requestOptions,
+        headers: {
+          'User-Agent': `graphql-monkey/${version}`,
+          ...requestOptions.headers
+        },
         url,
         method: 'POST',
         body: { query },
