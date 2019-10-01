@@ -249,9 +249,7 @@ export function updateTypeReports(
 
             if (parentType.kind !== 'OBJECT') {
               throw new Error(
-                `Unexpected parent kind ${parentType.kind} at ${
-                  parentType.name
-                }.${node.name.value}`
+                `Unexpected parent kind ${parentType.kind} at ${parentType.name}.${node.name.value}`
               );
             }
 
