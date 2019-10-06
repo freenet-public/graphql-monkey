@@ -1,5 +1,11 @@
 # Changelog
 
+## master
+
+- Set User-Agent header for all requests #6
+- Improved exploration #4
+- Dependency updates
+
 ## v0.2.0
 
 - Add type report (`-p types`) including coverage #7

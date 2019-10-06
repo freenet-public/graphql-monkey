@@ -1,6 +1,7 @@
 ```
 Copyright (c) 2019 mobilcom-debitel GmbH
 Copyright (c) 2019 Morris Brodersen <mb@morrisbrodersen.de>
+Copyright (c) 2019 Frederik Priede
 
 Permission to use, copy, modify, and/or distribute this software for any
 purpose with or without fee is hereby granted, provided that the above
