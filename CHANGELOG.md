@@ -1,6 +1,6 @@
 # Changelog
 
-## master
+## v0.2.1
 
 - Set User-Agent header for all requests #6
 - Improved exploration #4
