@@ -127,7 +127,7 @@ export class Session {
       });
 
       const data = response.body && response.body.data;
-      const errors = response.body && response.body.errors || [];
+      const errors = (response.body && response.body.errors) || [];
 
       const unexpectedErrors: GraphQLError[] = errors.filter(
         (error: GraphQLError) =>
