@@ -5,7 +5,9 @@
 - Set User-Agent header for all requests #6
 - Improved exploration #4
 - Dependency updates
-- Fix binary command
+- Fix binary
+- Fix issue with empty response bodies
+- Add examples
 
 ## v0.2.0
 

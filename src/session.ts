@@ -126,20 +126,23 @@ export class Session {
         timeout
       });
 
-      const errors = response.body.errors || [];
+      const data = response.body && response.body.data;
+      const errors = response.body && response.body.errors || [];
 
       const unexpectedErrors: GraphQLError[] = errors.filter(
         (error: GraphQLError) =>
           !errorCallback || errorCallback(error, this.options)
       );
 
-      this.memory.write([], response.body.data);
+      if (data) {
+        this.memory.write([], data);
+      }
 
       result = {
         query,
         queryAst,
         statusCode: response.statusCode,
-        data: response.body.data,
+        data,
         errors,
         responseTime: Date.now() - t,
         unexpectedErrors,

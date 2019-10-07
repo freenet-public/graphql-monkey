@@ -14,33 +14,38 @@ export async function introspect(
   url: string,
   requestOptions?: Options
 ): Promise<IntrospectionQuery> {
-  const body = await request({
-    ...requestOptions,
-    headers: {
-      'User-Agent': `graphql-monkey/${version}`,
-      ...(requestOptions ? requestOptions.headers : undefined)
-    },
-    url,
-    body: {
-      query: getIntrospectionQuery({ descriptions: false })
-    },
-    json: true,
-    method: 'POST'
-  });
+  try {
+    const body = await request({
+      ...requestOptions,
+      headers: {
+        'User-Agent': `graphql-monkey/${version}`,
+        ...(requestOptions ? requestOptions.headers : undefined)
+      },
+      url,
+      body: {
+        query: getIntrospectionQuery({ descriptions: false })
+      },
+      json: true,
+      method: 'POST'
+    });
 
-  if (body.errors && body.errors.length > 0) {
-    throw new Error(
-      `Introspection failed: ${body.errors
-        .map((err: GraphQLError) => err.message)
-        .join(', ')}`
-    );
+    if (body.errors && body.errors.length > 0) {
+      throw new Error(
+        `Introspection failed: ${body.errors
+          .map((err: GraphQLError) => err.message)
+          .join(', ')}`
+      );
+    }
+
+    if (!body.data) {
+      throw new Error('Introspection failed: No data');
+    }
+
+    return body.data;
+  } catch (err) {
+    err.message = `Introspection failed: ${err.message}`;
+    throw err;
   }
-
-  if (!body.data) {
-    throw new Error('Introspection failed; no data');
-  }
-
-  return body.data;
 }
 
 export class IntrospectionHelper {

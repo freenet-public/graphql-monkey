@@ -110,8 +110,8 @@ export class ConsoleReporter {
           this.print(
             chalk.red(
               indent(
-                result.requestError.message ||
-                  result.requestError.stack ||
+                result.requestError.stack ||
+                  result.requestError.message ||
                   'Request Error',
                 4
               )
