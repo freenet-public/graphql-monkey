@@ -17,8 +17,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "graphql-monkey": "./dist/bin.js",
-    "gqlm": "./dist/bin.js"
+    "graphql-monkey": "./dist/src/bin.js",
+    "gqlm": "./dist/src/bin.js"
   },
   "files": [
     "dist",
