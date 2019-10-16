@@ -1,6 +1,6 @@
 {
   "name": "graphql-monkey",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "A test framework and CLI for running fully automated, randomized tests against any GraphQL API.",
   "keywords": [
     "graphql",
@@ -14,8 +14,8 @@
   ],
   "license": "ISC",
   "module": "src/index.ts",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
   "bin": {
     "graphql-monkey": "./dist/src/bin.js",
     "gqlm": "./dist/src/bin.js"

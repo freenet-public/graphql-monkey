@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.2.2
+
+- Fix `main` and `types` in `package.json`
+
 ## v0.2.1
 
 - Set User-Agent header for all requests #6
